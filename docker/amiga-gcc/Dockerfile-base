@@ -1,0 +1,36 @@
+# Based on https://github.com/sebastianbergmann/container-amiga-gcc
+
+FROM ubuntu:24.10
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y \
+    autoconf \
+    bison \
+    flex \
+    g++ \
+    gcc \
+    gettext \
+    git \
+    lhasa \
+    libgmpxx4ldbl \
+    libgmp-dev \
+    libmpfr6 \
+    libmpfr-dev \
+    libmpc3 \
+    libmpc-dev \
+    libncurses-dev \
+    make \
+    rsync \
+    texinfo\
+    wget \
+    && rm -rf /var/lib/apt/lists/* && \
+    git config --global pull.rebase false && \
+    cd /root && \
+    git clone --depth 1 https://github.com/anderskjeldsen/m68k-amigaos-gcc amiga-gcc --branch zlib-1.3.1 && \
+    cd /root/amiga-gcc && \
+    mkdir -p /opt/amiga && \
+    make update && \
+    make -j4 all
+
+ENV PATH /opt/amiga/bin:$PATH
