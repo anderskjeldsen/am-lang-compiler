@@ -33,67 +33,12 @@ Set up your Docker image for Amiga GCC (using the Docker files in docker/amiga-g
 docker build -f Dockerfile-libpng -t amiga-gcc
 ```
 
-A simple way to get started is in the works. Until then:
+A simple way to get started is, is to go to the examples folder and try out the hello-world example.
 
-Create the following files:
-
-src/Startup.aml
-
-```java
-namespace Am.Examples {    
-
-    class Startup {
-        import Am.Lang
-        import Am.Lang.Diagnostics
-
-        static fun main() {
-            "Hello World".println()
-        }
-    }
-}
-```
-
-package.yml
-    
-```yaml
-name: AmigaOS3Example
-version: 1.0
-description: "Example for AmigaOS3"
-dependencies:
-  - id: am-lang-core
-    realm: github
-    type: git-repo
-    tag: latest
-    url: https://github.com/anderskjeldsen/am-lang-core.git
-platforms:
-  - id: libc
-    abstract: true
-  - id: amigaos
-    extends: libc
-    gccCommand: m68k-amigaos-gcc
-    asmCommand: vasmm68k_mot
-    gccAdditionalLibraries:
-    additionalHeaders:
-    additionalAsmSources:
-    additionalCSources:
-    additionalIncludePaths:
-    gccAdditionalOptions:
-       - -noixemul     
-    gccLibraryPaths:
-
-buildTargets:
-  - id: amigaos_docker
-    platform: amigaos
-    dockerBuild:
-      image: amiga-gcc
-      buildPath: /host
-
-```
-
-Then run the compiler in the project folder:
+Then run the compiler:
 
 ```bash
-java -jar amlc.jar build .
+java -jar amlc.jar build . -bt amigaos_docker
 ```
 
 # Code example
