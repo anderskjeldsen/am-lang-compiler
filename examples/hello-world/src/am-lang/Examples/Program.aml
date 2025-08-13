@@ -1,0 +1,11 @@
+namespace Examples {    
+
+    class Program {
+        import Am.Lang
+        import Am.Lang.Diagnostics
+
+        static fun main() {
+            "Hello World".println()
+        }
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "amlang-syntax",
+  "displayName": "AmLang Syntax Highlighting",
+  "description": "Syntax highlighting for the Am (aMinor) language (namespaces, imports, classes, vars, fun, types, comments, strings, numbers).",
+  "version": "0.0.1",
+  "publisher": "AmLang.net",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "amlang",
+        "aliases": [
+          "AmLang",
+          "am-lang"
+        ],
+        "extensions": [
+          ".aml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "amlang",
+        "scopeName": "source.amlang",
+        "path": "./syntaxes/amlang.tmLanguage.json"
+      }
+    ]
+  }
+}
