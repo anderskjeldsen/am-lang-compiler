@@ -90,7 +90,7 @@ namespace Examples
             var vStack = new VStack(w.getScaledY(2S))
             panel.setChild(vStack)
 
-            Startup.listFolderInViewGroup(w, vStack, new Folder(folder, null))
+            Program.listFolderInViewGroup(w, vStack, new Folder(folder, null))
 
             w.setRootView(panel)
 
