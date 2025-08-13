@@ -1,0 +1,107 @@
+
+namespace Am.Ui 
+{
+    class Folder(var file: File, var parent: Folder) {
+        import Am.Lang
+        import Am.IO
+
+    }
+
+    class Startup {
+        import Am.Lang
+        import Am.Threading
+        import Am.IO
+
+        static var xxx: Int = 1
+
+        static fun listFolder(prefix: String, folder: Folder) {
+            ("list folder " + prefix + folder.file.filename).println()
+            var files = folder.file.listFiles()
+            var i = 0
+            while(i < files.length()) {
+                var f = files[i]
+                (prefix + f.filename).println()
+                if (f.isDirectory()) {
+                    Startup.listFolder(prefix + "-", f)
+                }
+                i++
+            }
+        }
+
+        static fun listFolderInViewGroup(win: Window, vg: ViewGroup, folder: Folder) {
+            var list = folder.file.listFiles()
+            vg.removeChildren()
+            var i = 0
+            var len = list.length()
+
+            if (folder.parent != null) {
+                var b = new Button("..", (v) => {
+                    Startup.listFolderInViewGroup(win, vg, folder.parent)
+                    win.layout()
+                    win.requestRepaint()
+                    return true
+                })
+
+                b.setup((v) => {
+                    v.setDefaultPadding()
+                    v.growX = 255UB
+                    v.growY = 0UB
+                })
+
+                vg.addChild(b)
+            }
+
+            while(i < len) {
+                var file = list[i++]
+
+                var b = new Button(file.getName(), (v) => {
+                    var f2 = file
+                    var w2 = win
+
+                    if (f2.isDirectory()) {
+                        Startup.listFolderInViewGroup(w2, vg, new Folder(f2, folder))
+                        w2.layout()
+                        w2.requestRepaint()
+                    }
+                    return true
+                })
+
+                b.setup((v) => {
+                    v.setDefaultPadding()
+                    var w2 = win
+                    v.growX = 255UB
+                    v.growY = 0UB
+                })
+
+                vg.addChild(b)
+            }
+        }
+
+        static fun main() {
+            var w = Window.openWindow(20S, 20S, 150US, 150US, null, null)
+            var pm = w.getPixelMetrics()
+
+            var folder = new File("ram:")
+            
+            var panel = new Panel()
+            panel.setDefaultBorder()
+            panel.setDefaultPadding()
+            panel.setMargin(w.getScaledX(2S), w.getScaledY(2S))
+
+            var vStack = new VStack(w.getScaledY(2S))
+            panel.setChild(vStack)
+
+            Startup.listFolderInViewGroup(w, vStack, new Folder(folder, null))
+
+            w.setRootView(panel)
+
+            w.layout()
+            w.requestRepaint()
+
+            while(w.isOpen()) {
+                w.handleInput()
+            }
+        }
+    }
+}
+
