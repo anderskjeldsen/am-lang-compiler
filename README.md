@@ -30,7 +30,7 @@ There are still some major features missing, like for example for-loops. I have 
 
 Set up your Docker image for Amiga GCC (using the Docker files in docker/amiga-gcc):
 ```bash
-docker build -f Dockerfile-libpng -t amiga-gcc
+docker build -f Dockerfile-libpng -t amiga-gcc .
 ```
 
 A simple way to get started is, is to go to the examples folder and try out the hello-world example.

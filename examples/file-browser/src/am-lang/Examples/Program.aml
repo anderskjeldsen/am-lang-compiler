@@ -1,5 +1,5 @@
 
-namespace Am.Ui 
+namespace Examples 
 {
     class Folder(var file: File, var parent: Folder) {
         import Am.Lang
@@ -7,12 +7,11 @@ namespace Am.Ui
 
     }
 
-    class Startup {
+    class Program {
         import Am.Lang
         import Am.Threading
         import Am.IO
-
-        static var xxx: Int = 1
+        import Am.Ui
 
         static fun listFolder(prefix: String, folder: Folder) {
             ("list folder " + prefix + folder.file.filename).println()
@@ -22,7 +21,7 @@ namespace Am.Ui
                 var f = files[i]
                 (prefix + f.filename).println()
                 if (f.isDirectory()) {
-                    Startup.listFolder(prefix + "-", f)
+                    Program.listFolder(prefix + "-", f)
                 }
                 i++
             }
@@ -36,7 +35,7 @@ namespace Am.Ui
 
             if (folder.parent != null) {
                 var b = new Button("..", (v) => {
-                    Startup.listFolderInViewGroup(win, vg, folder.parent)
+                    Program.listFolderInViewGroup(win, vg, folder.parent)
                     win.layout()
                     win.requestRepaint()
                     return true
@@ -59,7 +58,7 @@ namespace Am.Ui
                     var w2 = win
 
                     if (f2.isDirectory()) {
-                        Startup.listFolderInViewGroup(w2, vg, new Folder(f2, folder))
+                        Program.listFolderInViewGroup(w2, vg, new Folder(f2, folder))
                         w2.layout()
                         w2.requestRepaint()
                     }

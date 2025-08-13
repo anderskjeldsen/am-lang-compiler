@@ -1,4 +1,4 @@
-id: hello-world
+id: file-browser
 version: 1.0
 type: application
 dependencies:
@@ -20,6 +20,7 @@ platforms:
     gccCommand: m68k-amigaos-gcc
     asmCommand: vasmm68k_mot
     gccAdditionalLibraries:
+     - socket
     additionalHeaders:
     additionalAsmSources:
     additionalCSources:
