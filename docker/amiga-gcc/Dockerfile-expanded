@@ -1,4 +1,7 @@
 # Based on https://github.com/sebastianbergmann/container-amiga-gcc
+# adding libpng, zlib, AmiSSL
+
+
 FROM amiga-gcc-base
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -8,7 +11,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 RUN cd /root/amiga-gcc && \
     make zlib && \
-    make libpng
+    make libpng && \
+    make amissl
 
 RUN cd / && \
     rm -rf /root/amiga-gcc && \

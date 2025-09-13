@@ -30,7 +30,8 @@ There are still some major features missing, like for example for-loops. I have 
 
 Set up your Docker image for Amiga GCC (using the Docker files in docker/amiga-gcc):
 ```bash
-docker build -f Dockerfile-libpng -t amiga-gcc .
+docker build -f Dockerfile-base -t amiga-gcc-base .
+docker build -f Dockerfile-expanded -t amiga-gcc .
 ```
 
 A simple way to get started is, is to go to the examples folder and try out the hello-world example.
@@ -86,4 +87,5 @@ namespace Am.Examples {
 
 # Try AmLang for yourself
 
+CURRENTLY OUTDATED:
 We've made a web-based playground (IDE) that you can try here: https://www.kelson.no/tools/amlangide
