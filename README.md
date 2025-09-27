@@ -14,7 +14,7 @@ AmLang is inspired by other programming languages like Kotlin, Java, C#, TypeScr
 - suspendable functions
 - lambda expressions
 - native c support
-- exceptions (try,catch,throw) 
+- exceptions (try,catch,throw)
 - generics
 - and a lot more. 
 
@@ -44,7 +44,7 @@ java -jar amlc.jar build . -bt amigaos_docker
 
 # Code example
 
-The following code fills up a HashSet2 (will be renamed to HashSet) and times it.
+The following code fills up a HashSet and times it.
 
 ```java
 namespace Am.Examples {    
@@ -57,14 +57,12 @@ namespace Am.Examples {
         import Am.Collections
 
         static fun main() {
-            var set = new HashSet2<Int>()
+            var set = new HashSet<Int>()
             var startDate = Date.now()
-            var i = 1
             var max = 1000000
-            ("Adding " + max.toString() + " key-value pairs to a HashSet on an emulated 020").println()
-            while(i <= max) {                
+            ("Adding " + max.toString() + " key-value pairs to a HashSet").println()
+            for(i = 0 to max) {                
                 set.add(i)
-                i++
             }
 
             var endDate = Date.now()
