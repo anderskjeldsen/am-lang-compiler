@@ -95,11 +95,11 @@
       "patterns": [
         {
           "name": "keyword.control.amlang",
-          "match": "\\b(if|else|for|while|break|continue|each|try|catch|finally|throw|return|susp|new|nameof|as|is)\\b"
+          "match": "\\b(if|else|for|while|break|continue|each|try|catch|finally|throw|return|susp|new|nameof|as|is|switch|case|default)\\b"
         },
         {
           "name": "keyword.declaration.amlang",
-          "match": "\\b(namespace|class|interface|enum|import|static|var|fun|public|private|native|const|abstract|open)\\b"
+          "match": "\\b(namespace|class|interface|enum|import|static|var|const|fun|public|private|native|const|abstract|open|override)\\b"
         },
         {
           "name": "constant.language.amlang",
