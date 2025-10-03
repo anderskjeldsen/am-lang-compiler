@@ -83,6 +83,44 @@ namespace Am.Examples {
 }
 ```
 
+# Official repos
+
+## am-lang-core
+
+Core functionality of the AmLang programming language.
+
+https://github.com/anderskjeldsen/am-lang-core
+
+## am-net
+
+Networking capabilities for AmLang.
+
+https://github.com/anderskjeldsen/am-net
+
+## am-ssl
+
+SSL/TLS support for AmLang.
+
+https://github.com/anderskjeldsen/am-ssl
+
+## am-ui
+
+User interface components for AmLang (Amiga / Morphos)
+
+https://github.com/anderskjeldsen/am-ui
+
+## am-imaging
+
+Imaging capabilities for AmLang.
+
+https://github.com/anderskjeldsen/am-imaging
+
+## am-png
+
+PNG image format support for AmLang.
+
+https://github.com/anderskjeldsen/am-png
+
 # Try AmLang for yourself
 
 CURRENTLY OUTDATED:
