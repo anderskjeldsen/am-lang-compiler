@@ -109,6 +109,17 @@ User interface components for AmLang (Amiga / Morphos)
 
 https://github.com/anderskjeldsen/am-ui
 
+## am-imaging
+
+Imaging capabilities for AmLang.
+
+https://github.com/anderskjeldsen/am-imaging
+
+## am-png
+
+PNG image format support for AmLang.
+
+https://github.com/anderskjeldsen/am-png
 
 # Try AmLang for yourself
 
