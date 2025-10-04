@@ -99,7 +99,7 @@
         },
         {
           "name": "keyword.declaration.amlang",
-          "match": "\\b(namespace|class|interface|enum|import|static|var|const|fun|public|private|native|const|abstract|open|override)\\b"
+          "match": "\\b(namespace|class|interface|enum|import|static|ext|var|const|fun|public|private|native|const|abstract|open|override)\\b"
         },
         {
           "name": "constant.language.amlang",
