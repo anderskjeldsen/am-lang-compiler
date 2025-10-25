@@ -73,8 +73,6 @@ detect_platform() {
 
 # Get latest version
 get_latest_version() {
-    log_info "Fetching latest version information..."
-    
     local api_url="https://api.github.com/repos/${RELEASES_REPO}/releases/latest"
     local version
     
@@ -174,51 +172,43 @@ install_jar() {
     
     log_info "Installing JAR version of AmLang Compiler ${version}..."
     
-    # Determine JAR archive format
-    local extension="tar.gz"
-    local launcher="amlc.sh"
+    # Use the direct JAR download from GitHub releases
+    local jar_filename="amlc-${version#v}.jar"
+    local launcher_filename="amlc.sh"
     
     if [[ "$platform" == *"windows"* ]]; then
-        extension="zip"
-        launcher="amlc.bat"
+        launcher_filename="amlc.bat"
     fi
     
-    # Download URL
-    local filename="amlc-jar-${version#v}.${extension}"
-    local download_url="https://github.com/${RELEASES_REPO}/raw/main/releases/${version}/${filename}"
+    # Download URLs for JAR and launcher
+    local jar_url="https://github.com/${RELEASES_REPO}/releases/download/${version}/${jar_filename}"
+    local launcher_url="https://github.com/${RELEASES_REPO}/releases/download/${version}/${launcher_filename}"
     
-    log_info "Downloading JAR package..."
-    log_info "URL: $download_url"
+    log_info "Downloading JAR and launcher..."
+    log_info "JAR URL: $jar_url"
+    log_info "Launcher URL: $launcher_url"
     
-    # Download
+    # Download JAR
     if command -v curl >/dev/null 2>&1; then
-        curl -L -o "$temp_dir/$filename" "$download_url"
+        curl -L -o "$temp_dir/$jar_filename" "$jar_url"
+        curl -L -o "$temp_dir/$launcher_filename" "$launcher_url"
     elif command -v wget >/dev/null 2>&1; then
-        wget -O "$temp_dir/$filename" "$download_url"
+        wget -O "$temp_dir/$jar_filename" "$jar_url"
+        wget -O "$temp_dir/$launcher_filename" "$launcher_url"
     else
         log_error "Neither curl nor wget is available"
         exit 1
     fi
     
-    # Verify download
-    if [[ ! -f "$temp_dir/$filename" ]] || [[ ! -s "$temp_dir/$filename" ]]; then
-        log_error "Download failed or file is empty"
+    # Verify downloads
+    if [[ ! -f "$temp_dir/$jar_filename" ]] || [[ ! -s "$temp_dir/$jar_filename" ]]; then
+        log_error "JAR download failed or file is empty"
         exit 1
     fi
     
-    log_info "Download completed, extracting..."
-    
-    # Extract
-    cd "$temp_dir"
-    if [[ "$extension" == "zip" ]]; then
-        if command -v unzip >/dev/null 2>&1; then
-            unzip -q "$filename"
-        else
-            log_error "unzip is not available"
-            exit 1
-        fi
-    else
-        tar -xzf "$filename"
+    if [[ ! -f "$temp_dir/$launcher_filename" ]] || [[ ! -s "$temp_dir/$launcher_filename" ]]; then
+        log_error "Launcher download failed or file is empty"
+        exit 1
     fi
     
     log_info "Installing JAR to $INSTALL_DIR..."
@@ -230,27 +220,24 @@ install_jar() {
     fi
     
     # Install JAR and launcher
-    local jar_file="amlc-${version#v}.jar"
     local target_jar="amlc.jar"
     local target_launcher="amlc"
     
     if [[ -w "$INSTALL_DIR" ]]; then
-        cp "$jar_file" "$INSTALL_DIR/$target_jar"
-        cp "$launcher" "$INSTALL_DIR/$target_launcher"
+        cp "$temp_dir/$jar_filename" "$INSTALL_DIR/$target_jar"
+        cp "$temp_dir/$launcher_filename" "$INSTALL_DIR/$target_launcher"
         chmod +x "$INSTALL_DIR/$target_launcher"
     else
-        sudo cp "$jar_file" "$INSTALL_DIR/$target_jar"
-        sudo cp "$launcher" "$INSTALL_DIR/$target_launcher"
+        sudo cp "$temp_dir/$jar_filename" "$INSTALL_DIR/$target_jar"
+        sudo cp "$temp_dir/$launcher_filename" "$INSTALL_DIR/$target_launcher"
         sudo chmod +x "$INSTALL_DIR/$target_launcher"
     fi
     
-    # Update launcher script to use installed JAR
-    if [[ "$platform" == *"windows"* ]]; then
-        # Update Windows batch file
+    # Update launcher script to use installed JAR name
+    if [[ -w "$INSTALL_DIR" ]]; then
         sed -i "s/amlc-.*\.jar/amlc.jar/g" "$INSTALL_DIR/$target_launcher"
     else
-        # Update shell script
-        sed -i "s/amlc-.*\.jar/amlc.jar/g" "$INSTALL_DIR/$target_launcher"
+        sudo sed -i "s/amlc-.*\.jar/amlc.jar/g" "$INSTALL_DIR/$target_launcher"
     fi
     
     log_success "AmLang Compiler (JAR) installed successfully!"
@@ -260,7 +247,7 @@ install_jar() {
     # Test installation
     if command -v "$target_launcher" >/dev/null 2>&1; then
         log_success "Installation verified: $(which $target_launcher)"
-        log_info "Version: $($target_launcher --version 2>/dev/null || echo 'Unknown')"
+        log_info "Run 'amlc build . -bt linux-x64' in a project directory to test"
     else
         log_warning "Launcher installed but not in PATH. Add $INSTALL_DIR to your PATH:"
         echo "export PATH=\"$INSTALL_DIR:\$PATH\""
@@ -273,20 +260,40 @@ install_native() {
     local version="$2"
     local temp_dir="$3"
     
-    # Determine file extension
+    # Determine file extension and executable name based on actual releases
     local extension="tar.gz"
-    local executable="amlc-${platform/-/-}"
+    local filename
+    local executable="amlc"
     
-    if [[ "$platform" == *"windows"* ]]; then
-        extension="zip"
-        executable="amlc-windows.exe"
-    fi
+    # Map platform to actual release file names
+    case "$platform" in
+        linux-x64)
+            filename="amlc-linux-x64-${version#v}.tar.gz"
+            executable="amlc-linux"
+            ;;
+        macos-x64)
+            filename="amlc-macos-x64-${version#v}.tar.gz"
+            executable="amlc-mac"
+            ;;
+        macos-arm64)
+            filename="amlc-macos-arm64-${version#v}.tar.gz"
+            executable="amlc-mac-arm64"
+            ;;
+        windows-x64)
+            filename="amlc-windows-${version#v}.zip"
+            executable="amlc-windows.exe"
+            extension="zip"
+            ;;
+        *)
+            log_error "Unsupported platform: $platform"
+            exit 1
+            ;;
+    esac
     
     log_info "Downloading AmLang Compiler ${version} for ${platform}..."
     
-    # Download URL
-    local filename="amlc-${platform}-${version#v}.${extension}"
-    local download_url="https://github.com/${RELEASES_REPO}/raw/main/releases/${version}/${filename}"
+    # Use GitHub releases download URL
+    local download_url="https://github.com/${RELEASES_REPO}/releases/download/${version}/${filename}"
     
     log_info "URL: $download_url"
     
@@ -362,7 +369,7 @@ install_native() {
     # Test installation
     if command -v "$target_name" >/dev/null 2>&1; then
         log_success "Installation verified: $(which $target_name)"
-        log_info "Version: $($target_name --version 2>/dev/null || echo 'Unknown')"
+        log_info "Run 'amlc build . -bt linux-x64' in a project directory to test"
     else
         log_warning "Binary installed but not in PATH. Add $INSTALL_DIR to your PATH:"
         echo "export PATH=\"$INSTALL_DIR:\$PATH\""
@@ -471,6 +478,7 @@ main() {
     
     # Get version
     if [[ "$VERSION" == "latest" ]]; then
+        log_info "Fetching latest version information..."
         VERSION=$(get_latest_version)
     fi
     
@@ -482,7 +490,7 @@ main() {
     
     echo
     log_success "Installation complete!"
-    log_info "Try: amlc --help"
+    log_info "Try: amlc build . -bt linux-x64"
 }
 
 # Check if script is being sourced or executed

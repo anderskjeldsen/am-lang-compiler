@@ -83,7 +83,7 @@ namespace HelloWorld {
 ### 2. Create Project Structure
 ```bash
 mkdir my-project && cd my-project
-amlc init                    # Creates package.yml and src/ directory
+amlc new                    # Creates package.yml and src/ directory
 ```
 
 ### 3. Compile and Run
@@ -97,20 +97,41 @@ amlc run                     # Builds and runs your program
 ### Cross-Platform GUI Application
 ```amlang
 namespace MyApp {
-    import Am.UI
+    import Am.Lang
+    import Am.Ui
     
-    class MainWindow : Window {
-        fun initComponents() {
-            var button = new Button("Click Me!")
-            button.onClick { "Button clicked!".println() }
-            this.add(button)
-        }
-    }
-    
-    class App {
-        fun main() {
-            var window = new MainWindow()
-            window.show()
+    class MainWindow {
+        static fun main() {
+            var w = Window.openWindow(20S, 20S, 300US, 200US, null, null)
+            
+            var panel = new Panel()
+            panel.setDefaultBorder()
+            panel.setDefaultPadding()
+            panel.setMargin(w.getScaledX(2S), w.getScaledY(2S))
+
+            var vStack = new VStack(w.getScaledY(2S))
+            panel.setChild(vStack)
+
+            var button = new Button("Click Me!", (v) => {
+                "Button clicked!".println()
+                return true
+            })
+
+            button.setup((v) => {
+                v.setDefaultPadding()
+                v.growX = 255UB
+                v.growY = 0UB
+            })
+
+            vStack.addChild(button)
+            w.setRootView(panel)
+
+            w.layout()
+            w.requestRepaint()
+
+            while(w.isOpen()) {
+                w.handleInput()
+            }
         }
     }
 }
@@ -139,59 +160,48 @@ namespace MyApp.Tests {
 }
 ```
 
-### Embedded Systems Programming
-```amlang
-namespace EmbeddedApp {
-    import Am.Hardware
-    
-    class SensorController {
-        var pin: GPIO
-        
-        constructor(pinNumber: Int) {
-            this.pin = GPIO.getPin(pinNumber)
-            this.pin.setMode(INPUT)
-        }
-        
-        fun readTemperature(): Float {
-            var value = this.pin.analogRead()
-            return value * 0.1 + 20.0  // Convert to Celsius
-        }
-    }
-}
-```
-
 ## 🛠️ Build System
 
 ### Project Configuration (`package.yml`)
 ```yaml
-name: my-awesome-app
-version: 1.0.0
-description: My cross-platform application
-
+id: my-awesome-app
+version: 1.0
+type: application
 dependencies:
-  - name: am-lang-core
-    version: latest
-  - name: am-ui
-    version: 1.2.0
-    
-testDependencies:
-  - name: test-utils
-    version: latest
-
-targets:
-  - linux
-  - windows
-  - amiga
+  - id: am-lang-core
+    realm: github
+    type: git-repo
+    tag: latest
+    url: https://github.com/anderskjeldsen/am-lang-core.git
+  - id: am-ui
+    realm: github
+    type: git-repo
+    tag: latest
+    url: https://github.com/anderskjeldsen/am-ui.git
+platforms:
+  - id: libc
+    abstract: true
+  - id: linux-x64
+    extends: libc
+    gccCommand: gcc
+  - id: amigaos
+    extends: libc
+    gccCommand: m68k-amigaos-gcc
+buildTargets:
+  - id: linux-x64
+    platform: linux-x64
+  - id: amigaos
+    platform: amigaos
 ```
 
 ### Common Commands
 ```bash
-amlc init                    # Initialize new project
+amlc new                    # Initialize new project
 amlc build                   # Build project 
 amlc run                     # Build and run
 amlc test                    # Run unit tests
 amlc clean                   # Clean build artifacts
-amlc --help                  # Show all commands
+amlc                       # Show help when no valid command given
 ```
 
 ## 🧪 Testing Framework
