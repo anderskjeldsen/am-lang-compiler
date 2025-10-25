@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/anderskjeldsen/am-lang-compiler/mas
 ### Verify Installation
 ```bash
 amlc --version
-# Output: AmLang Compiler v0.6.4 (native)
+# Output: AmLang Compiler v0.6.4
 ```
 
 ### Write Your First Program
