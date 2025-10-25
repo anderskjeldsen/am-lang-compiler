@@ -1,0 +1,19 @@
+namespace Example {
+    class Program {
+        import Am.Lang
+
+        static fun main() {
+            "Loop Demo starting".println()
+            var i = 1
+            loop {
+                i.toString().println()
+                if (i == 5) {
+                    break
+                }
+                i = i + 1
+            }
+            "Loop Demo ended".println()
+        }
+    }
+}
+

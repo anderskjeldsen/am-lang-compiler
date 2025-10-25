@@ -1,0 +1,69 @@
+namespace ExampleTests
+{
+    class ScopeTest {
+        import Am.Lang
+
+        test testBasicScope() {
+            var x = 10
+            
+            scope {
+                var y = 20
+                x = x + y
+            }
+            
+            // y should not be accessible here, but x should be modified
+            if (x != 30) {
+                throw new Exception("Expected 30, got $x")
+            }
+            
+            "Basic scope test passed!".println()
+        }
+
+        test testNestedScopes() {
+            var result = 0
+            
+            scope {
+                var a = 5
+                result = result + a
+                
+                scope {
+                    var b = 10
+                    result = result + b
+                    
+                    scope {
+                        var c = 15
+                        result = result + c
+                    }
+                }
+            }
+            
+            // Should be 5 + 10 + 15 = 30
+            if (result != 30) {
+                throw new Exception("Expected 30, got $result")
+            }
+            
+            "Nested scopes test passed!".println()
+        }
+
+        test testScopeIsolation() {
+            var outer = 100
+            
+            scope {
+                var inner = 200
+                outer = outer + inner
+            }
+            
+            scope {
+                var inner = 300  // Different variable with same name
+                outer = outer + inner
+            }
+            
+            // Should be 100 + 200 + 300 = 600
+            if (outer != 600) {
+                throw new Exception("Expected 600, got $outer")
+            }
+            
+            "Scope isolation test passed!".println()
+        }
+    }
+}

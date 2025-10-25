@@ -1,0 +1,57 @@
+namespace ExampleTests
+{
+    class MultipleMocksTest {
+        import Am.Lang
+        import Example
+
+        test testMultipleMocksInOneTest() {
+            // First mock returns 100
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 100
+                }
+            }
+            
+            var calc1 = new Calculator()
+            var result1 = calc1.add(5, 3)
+            
+            if (result1 != 100) {
+                throw new Exception("Expected 100 from first mock, but got $result1")
+            }
+            
+            // Second mock returns 200 
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 200
+                }
+            }
+            
+            var calc2 = new Calculator()
+            var result2 = calc2.add(5, 3)
+            
+            if (result2 != 200) {
+                throw new Exception("Expected 200 from second mock, but got $result2")
+            }
+            
+            "Multiple mocks test passed!".println()
+        }
+
+        test testMockInDifferentTest() {
+            // Third mock returns 300
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 300
+                }
+            }
+            
+            var calc = new Calculator()
+            var result = calc.add(5, 3)
+            
+            if (result != 300) {
+                throw new Exception("Expected 300 from third mock, but got $result")
+            }
+            
+            "Different test mock passed!".println()
+        }
+    }
+}

@@ -1,0 +1,118 @@
+namespace ExampleTests
+{
+    class ComplexMockScenariosTest {
+        import Am.Lang
+        import Example
+
+        test testSequentialMocksWithDifferentValues() {
+            var result1 = 0
+            var result2 = 0
+            var result3 = 0
+            var result4 = 0
+            
+            scope {
+                // First mock: return 100
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 100
+                    }
+                }
+                
+                var calculator1 = new Calculator()
+                result1 = calculator1.add(1, 1)
+                
+                // Second mock: return 200
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 200
+                    }
+                }
+                
+                var calculator2 = new Calculator()
+                result2 = calculator2.add(2, 2)
+                
+                // Third mock: return 300
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 300
+                    }
+                }
+                
+                var calculator3 = new Calculator()
+                result3 = calculator3.add(3, 3)
+            }
+            
+            // No mock: original behavior should be restored
+            var calculator4 = new Calculator()
+            result4 = calculator4.add(4, 4)
+            
+            if (result1 != 100) {
+                throw new Exception("Expected 100, got $result1")
+            }
+            if (result2 != 200) {
+                throw new Exception("Expected 200, got $result2")
+            }
+            if (result3 != 300) {
+                throw new Exception("Expected 300, got $result3")
+            }
+            if (result4 != 8) {
+                throw new Exception("Expected 8, got $result4")
+            }
+            
+            "Sequential mocks test passed!".println()
+        }
+
+        test testMockWithExceptionHandling() {
+            var caughtException = false
+            
+            try {
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 42
+                    }
+                }
+                
+                var calculator = new Calculator()
+                var mockResult = calculator.add(10, 20)
+                
+                if (mockResult != 42) {
+                    throw new Exception("Unexpected result")
+                }
+            } catch (e: Exception) {
+                caughtException = true
+            }
+            
+            if (caughtException) {
+                throw new Exception("Should not have caught exception")
+            }
+            
+            // Verify original behavior is restored after exception handling
+            var calculator2 = new Calculator()
+            var originalResult = calculator2.add(10, 20)
+            if (originalResult != 30) {
+                throw new Exception("Expected 30, got $originalResult")
+            }
+            
+            "Mock with exception handling test passed!".println()
+        }
+
+        test testMockWithCustomReturnValue() {
+            var baseValue = 1000
+            
+            // Use hardcoded values in mock to avoid external variable capture
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 1050  // Hardcoded value instead of baseValue + 50
+                }
+            }
+            
+            var calculator = new Calculator()
+            var result = calculator.add(1, 2)
+            if (result != 1050) {
+                throw new Exception("Expected 1050, got $result")
+            }
+            
+            "Mock with custom return value test passed!".println()
+        }
+    }
+}

@@ -1,0 +1,23 @@
+id: "loop-keyword-demo"
+version: "1.0.0"
+type: "application"
+dependencies:
+  - id: am-lang-core
+    realm: github
+    type: git-repo
+    tag: latest
+    url: https://github.com/anderskjeldsen/am-lang-core.git
+platforms:
+  - id: libc
+    abstract: true
+  - id: "linux-x64"
+    extends: libc
+    gccCommand: "gcc"
+  - id: "macos"
+    extends: libc
+    gccCommand: "gcc"
+buildTargets:
+  - id: "linux-x64"
+    platform: "linux-x64"
+  - id: "macos"
+    platform: "macos"

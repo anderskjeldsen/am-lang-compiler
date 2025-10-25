@@ -1,0 +1,141 @@
+namespace ExampleTests
+{
+    class MockEdgeCasesTest {
+        import Am.Lang
+        import Example
+
+        test testEmptyMockBlock() {
+            // Test mock with minimal implementation
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 0
+                }
+            }
+            
+            var calculator = new Calculator()
+            var result = calculator.add(100, 50)
+            if (result != 0) {
+                throw new Exception("Expected 0, got $result")
+            }
+            
+            "Empty mock block test passed!".println()
+        }
+
+        test testMockWithSingleStatement() {
+            var capturedResult = 0
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 9999
+                }
+            }
+            
+            capturedResult = new Calculator().add(1, 2)
+            
+            if (capturedResult != 9999) {
+                throw new Exception("Expected 9999, got $capturedResult")
+            }
+            
+            "Mock with single statement test passed!".println()
+        }
+
+        test testMockReturnValues() {
+            // Test various return value scenarios
+            
+            // Zero return
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 0
+                }
+            }
+            
+            var result1 = new Calculator().add(999, 1)
+            if (result1 != 0) {
+                throw new Exception("Expected 0, got $result1")
+            }
+            
+            // Negative return
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return -50
+                }
+            }
+            
+            var result2 = new Calculator().add(10, 20)
+            if (result2 != -50) {
+                throw new Exception("Expected -50, got $result2")
+            }
+            
+            // Large return value
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 1000000
+                }
+            }
+            
+            var result3 = new Calculator().add(1, 1)
+            if (result3 != 1000000) {
+                throw new Exception("Expected 1000000, got $result3")
+            }
+            
+            "Mock return values test passed!".println()
+        }
+
+        test testMockStateIsolation() {
+            // Verify that mock state doesn't leak between different usage blocks
+            var firstResult1 = 0
+            var firstResult2 = 0
+            var firstResult3 = 0
+            var secondResult1 = 0
+            var secondResult2 = 0
+            var secondResult3 = 0
+            
+            // First mock session
+            scope {
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 100
+                    }
+                }
+                
+                firstResult1 = new Calculator().add(1, 1)
+                firstResult2 = new Calculator().add(2, 2)
+                firstResult3 = new Calculator().add(3, 3)
+            }
+            
+            // Verify original behavior between mocks
+            var betweenMocks = new Calculator().add(10, 10)
+            if (betweenMocks != 20) {
+                throw new Exception("Expected 20, got $betweenMocks")
+            }
+            
+            // Second mock session with different behavior
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 500
+                }
+            }
+            
+            secondResult1 = new Calculator().add(4, 4)
+            secondResult2 = new Calculator().add(5, 5)
+            secondResult3 = new Calculator().add(6, 6)
+            
+            // Verify isolation
+            if (firstResult1 != 100 || firstResult2 != 100 || firstResult3 != 100) {
+                throw new Exception("First results should all be 100")
+            }
+            
+            if (secondResult1 != 500 || secondResult2 != 500 || secondResult3 != 500) {
+                throw new Exception("Second results should all be 500")
+            }
+            
+            // Final verification - the second mock should still be active
+            var afterMocks = new Calculator().add(15, 15)
+            if (afterMocks != 500) {
+                throw new Exception("Expected 500, got $afterMocks")
+            }
+            
+            "Mock state isolation test passed!".println()
+        }
+    }
+}

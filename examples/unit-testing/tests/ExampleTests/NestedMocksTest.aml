@@ -1,0 +1,97 @@
+namespace ExampleTests
+{
+    class NestedMocksTest {
+        import Am.Lang
+        import Example
+
+        test testNestedMockBlocks() {
+            // Test nested mock blocks with different return values
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 50
+                }
+            }
+            
+            var outer = new Calculator()
+            var outerResult = outer.add(10, 20)
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 100
+                }
+            }
+            
+            var inner = new Calculator()
+            var innerResult = inner.add(5, 15)
+            
+            // Inner mock should return 100
+            if (innerResult != 100) {
+                throw new Exception("Expected 100 from inner mock, but got $innerResult")
+            }
+            
+            "Nested mocks test passed!".println()
+        }
+
+        test testSequentialMocks() {
+            var total = 0
+            
+            // Test multiple sequential mocks
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 10
+                }
+            }
+            
+            var calculator1 = new Calculator()
+            var result1 = calculator1.add(1, 1)
+            total = total + result1
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 20
+                }
+            }
+            
+            var calculator2 = new Calculator()
+            var result2 = calculator2.add(1, 1)
+            total = total + result2
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 30
+                }
+            }
+            
+            var calculator3 = new Calculator()
+            var result3 = calculator3.add(1, 1)
+            total = total + result3
+            
+            // Total should be 10 + 20 + 30 = 60
+            if (total != 60) {
+                throw new Exception("Expected 60, but got $total")
+            }
+            
+            "Sequential mocks test passed!".println()
+        }
+
+        test testMockInConditional() {
+            var useSpecialBehavior = true
+            
+            if (useSpecialBehavior) {
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 999
+                    }
+                }
+                
+                var calculator = new Calculator()
+                var result = calculator.add(1, 2)
+                if (result != 999) {
+                    throw new Exception("Expected 999 from conditional mock, but got $result")
+                }
+            }
+            
+            "Mock in conditional test passed!".println()
+        }
+    }
+}
