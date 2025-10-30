@@ -261,6 +261,38 @@ class ServiceTest {
 - **Native binaries**: No runtime dependencies
 - **JAR version**: Java 21+ required
 
+## 🐳 Docker Setup for AmigaOS Cross-Compilation
+
+For AmigaOS development, AmLang provides a complete Docker-based cross-compilation environment with the Amiga GCC toolchain and AmiSSL support:
+
+### Quick Setup
+```bash
+# From the project root
+cd docker/amiga-gcc
+./build.sh
+
+# Or alternatively, build directly from project root:
+docker build -f docker/amiga-gcc/Dockerfile -t amiga-gcc .
+```
+
+### Using the Docker Environment
+```bash
+# Interactive development environment
+docker run -it amiga-gcc
+
+# Mount your project for cross-compilation
+docker run -it -v $(pwd):/workspace amiga-gcc
+
+# Compile AmLang project for AmigaOS
+amlc build . -bt amigaos_docker
+```
+
+The Docker image includes:
+- **Complete Amiga GCC toolchain** (m68k-amigaos-gcc)
+- **AmiSSL library support** for secure networking
+- **All necessary SDKs** (AHI, CGX) for multimedia development
+- **Build tools** (sfdc, fd2sfd, binutils)
+
 ## 🎨 Language Features
 
 ### Object-Oriented Programming
