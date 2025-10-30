@@ -393,13 +393,19 @@ Build targets are configured in the project's `package.yml` file.
 
 # Quick start (for AmigaOS3):
 
-Set up your Docker image for Amiga GCC (using the Docker files in docker/amiga-gcc):
+Set up your Docker image for Amiga GCC (using the Docker file in docker/amiga-gcc):
 ```bash
-docker build -f Dockerfile-base -t amiga-gcc-base .
-docker build -f Dockerfile-expanded -t amiga-gcc .
+# From the project root
+cd docker/amiga-gcc
+./build.sh
+
+# Or alternatively, build directly from project root:
+docker build -f docker/amiga-gcc/Dockerfile -t amiga-gcc .
 ```
 
-A simple way to get started is, is to go to the examples folder and try out the hello-world example.
+The Docker image includes the complete Amiga GCC toolchain with AmiSSL support for cross-compilation to AmigaOS.
+
+A simple way to get started is to go to the examples folder and try out the hello-world example.
 
 Then run the compiler:
 
