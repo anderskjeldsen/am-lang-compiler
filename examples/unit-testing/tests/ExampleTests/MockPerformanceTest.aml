@@ -1,0 +1,134 @@
+namespace ExampleTests
+{
+    class MockPerformanceTest {
+        import Am.Lang
+        import Example
+
+        test testManyMocksPerformance() {
+            var totalResult = 0
+            
+            scope {
+                // Test creating many mocks in sequence to verify performance
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 5
+                    }
+                }
+                
+                var calc1 = new Calculator()
+                totalResult = totalResult + calc1.add(1, 1)
+                
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 10
+                    }
+                }
+                
+                var calc2 = new Calculator()
+                totalResult = totalResult + calc2.add(1, 1)
+                
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 15
+                    }
+                }
+                
+                var calc3 = new Calculator()
+                totalResult = totalResult + calc3.add(1, 1)
+                
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 20
+                    }
+                }
+                
+                var calc4 = new Calculator()
+                totalResult = totalResult + calc4.add(1, 1)
+                
+                mock Calculator {
+                    fun add(a: Int, b: Int): Int {
+                        return 25
+                    }
+                }
+                
+                var calc5 = new Calculator()
+                totalResult = totalResult + calc5.add(1, 1)
+                
+                // Total should be 5+10+15+20+25 = 75
+                if (totalResult != 75) {
+                    throw new Exception("Expected 75, got $totalResult")
+                }
+            }
+            
+            // Verify original behavior still works
+            var calculator = new Calculator()
+            var finalResult = calculator.add(100, 200)
+            if (finalResult != 300) {
+                throw new Exception("Expected 300, got $finalResult")
+            }
+            
+            "Many mocks performance test passed!".println()
+        }
+
+        test testConcurrentMockCreation() {
+            var result1 = 0
+            var result2 = 0
+            var result3 = 0
+            var result4 = 0
+            var result5 = 0
+            
+            // Simulate rapid mock creation/destruction
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 111
+                }
+            }
+            
+            var c1 = new Calculator()
+            result1 = c1.add(1, 1)
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 222
+                }
+            }
+            
+            var c2 = new Calculator()
+            result2 = c2.add(2, 2)
+            
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 333
+                }
+            }
+            
+            var c3 = new Calculator()
+            result3 = c3.add(3, 3)
+            
+            // Test more instances
+            var c4 = new Calculator()
+            result4 = c4.add(4, 4)
+            
+            var c5 = new Calculator()
+            result5 = c5.add(5, 5)
+            
+            if (result1 != 111) {
+                throw new Exception("Expected 111, got $result1")
+            }
+            if (result2 != 222) {
+                throw new Exception("Expected 222, got $result2")
+            }
+            if (result3 != 333) {
+                throw new Exception("Expected 333, got $result3")
+            }
+            if (result4 != 333) {
+                throw new Exception("Expected 333, got $result4")
+            }
+            if (result5 != 333) {
+                throw new Exception("Expected 333, got $result5")
+            }
+            
+            "Concurrent mock creation test passed!".println()
+        }
+    }
+}

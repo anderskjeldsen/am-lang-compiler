@@ -1,0 +1,16 @@
+AMLC=../../target/amlc-latest.jar
+CMD=java -jar $(AMLC)
+
+.PHONY: all test build clean
+
+test:
+	@$(CMD) test . -bt linux-x64
+
+build:
+	@$(CMD) build . -bt linux-x64
+
+run:
+	@$(CMD) run . -bt linux-x64
+
+clean:
+	@$(CMD) clean . -bt linux-x64

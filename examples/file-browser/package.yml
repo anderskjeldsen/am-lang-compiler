@@ -20,7 +20,6 @@ platforms:
     gccCommand: m68k-amigaos-gcc
     asmCommand: vasmm68k_mot
     gccAdditionalLibraries:
-     - socket
     additionalHeaders:
     additionalAsmSources:
     additionalCSources:
@@ -28,6 +27,9 @@ platforms:
     gccAdditionalOptions:
        - -noixemul     
     gccLibraryPaths:
+  - id: linux-x64
+    extends: libc
+    gccCommand: gcc
 
 buildTargets:
   - id: amigaos_docker
@@ -35,3 +37,5 @@ buildTargets:
     dockerBuild:
       image: amiga-gcc
       buildPath: /host
+  - id: linux-x64
+    platform: linux-x64

@@ -1,0 +1,60 @@
+namespace ExampleTests
+{
+    class CalculatorTest {
+        import Am.Lang
+        import Example
+
+        test testAddition() {
+            var calculator = new Calculator()
+            var result = calculator.add(5, 3)
+            if (result != 8) {
+                throw new Exception("Expected 8, but got $result")
+            }
+        }
+
+        test testSubtraction() {
+            var calculator = new Calculator()
+            var result = calculator.subtract(10, 4)
+            if (result != 6) {
+                throw new Exception("Expected 6, but got $result")
+            }
+        }
+
+        test testMultiplication() {
+            var calculator = new Calculator()
+            var result = calculator.multiply(6, 7)
+            if (result != 42) {
+                throw new Exception("Expected 42, but got $result")
+            }
+        }
+
+        test testDivision() {
+            var calculator = new Calculator()
+            var result = calculator.divide(20, 4)
+            if (result != 5) {
+                throw new Exception("Expected 5, but got $result")
+            }
+        }
+
+        test testDivisionByZero() {
+            var calculator = new Calculator()
+            var result = calculator.divide(10, 0)
+            if (result != 0) {
+                throw new Exception("Expected 0 (division by zero), but got $result")
+            }
+        }
+    }
+
+    class StringTest {
+        import Am.Lang
+
+        test testStringComparison() {
+            var str1 = "hello"
+            var str2 = "hello"
+            // Simple string comparison test
+            if (str1 != str2) {
+                throw new Exception("Expected strings to be equal")
+            }
+        }
+    }
+}
