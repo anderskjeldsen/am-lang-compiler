@@ -23,6 +23,12 @@
 - **Concurrency support** with built-in threading
 - **Clean syntax** inspired by Kotlin and C#
 
+### 🆕 **New in v0.7.0**
+- **Feature toggles** - Conditional compilation with `#require` directives for cross-platform development
+- **Float/Double support** - Native floating-point types with scientific notation (e.g., `1.23e-4F`)
+- **Code linting** - Built-in style checking with `amlc lint` command
+- **Documentation generation** - Auto-generate API docs with `amlc docs` command
+
 ### 🌍 **Universal Compatibility**
 - **Compile anywhere, run everywhere** - generates portable C code
 - **Cross-platform builds** for Linux, macOS, Windows
@@ -58,8 +64,8 @@ Download the latest native binary from [GitHub Releases](https://github.com/ande
 ### Manual Installation
 ```bash
 # Download and extract (example for Linux)
-wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.6.4.tar.gz
-tar -xzf amlc-linux-0.6.4.tar.gz
+wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.7.0.tar.gz
+tar -xzf amlc-linux-0.7.0.tar.gz
 chmod +x amlc-linux
 
 # Verify installation
@@ -93,6 +99,45 @@ amlc run                     # Builds and runs your program
 ```
 
 ## 🎯 Real-World Examples
+
+### Cross-Platform Graphics with Feature Toggles (v0.7.0)
+```amlang
+namespace Graphics {
+    #require opengl
+    class Renderer {
+        fun initialize() {
+            OpenGL.initContext()
+        }
+    }
+    
+    #require directx
+    class Renderer {
+        fun initialize() {
+            DirectX.createDevice()
+        }
+    }
+}
+
+// package.yml configures which features to use
+// dependencies:
+//   - id: graphics-lib
+//     features: [opengl]  # Use OpenGL on Linux/macOS
+```
+
+### Scientific Computing with Float/Double (v0.7.0)
+```amlang
+namespace Physics {
+    class Particle {
+        private var mass: Double = 9.109e-31     // Electron mass (kg)
+        private var charge: Double = -1.602e-19  // Elementary charge (C)
+        
+        fun kineticEnergy(velocity: Float): Double {
+            var v = velocity.toDouble()
+            return 0.5 * mass * v * v
+        }
+    }
+}
+```
 
 ### Cross-Platform GUI Application
 ```amlang
@@ -200,6 +245,8 @@ amlc new                    # Initialize new project
 amlc build                   # Build project 
 amlc run                     # Build and run
 amlc test                    # Run unit tests
+amlc lint                    # Check code style (v0.7.0)
+amlc docs                    # Generate API documentation (v0.7.0)
 amlc clean                   # Clean build artifacts
 amlc                       # Show help when no valid command given
 ```
