@@ -417,10 +417,6 @@ AmLang is actively developed and welcomes contributions! While the main developm
 - **Community libraries** and tools
 - **Documentation improvements**
 
-## 📄 License
-
-AmLang Compiler is available under a commercial license. Contact us for licensing information.
-
 ---
 
 **Ready to start building?** [Download AmLang](https://github.com/anderskjeldsen/am-lang-compiler/releases) and experience the future of systems programming!
