@@ -403,7 +403,11 @@ Explore real-world projects in the [`examples/`](examples/) directory:
 - **Image Browser** - Graphics and image processing
 - **Unit Testing** - Comprehensive testing examples with mocks
 
-### Community Projects
+### Official Frameworks
+- **[am-json](https://github.com/anderskjeldsen/am-json)** - Comprehensive JSON parsing and serialization library
+- **[am-net](https://github.com/anderskjeldsen/am-net)** - Networking utilities and protocols
+- **[am-ssl](https://github.com/anderskjeldsen/am-ssl)** - SSL/TLS security library
+- **[am-fipm](https://github.com/anderskjeldsen/am-fipm)** - Fixed-point mathematics library
 - **[am-ui](https://github.com/anderskjeldsen/am-ui)** - GUI framework for AmLang
 - **[am-imaging](https://github.com/anderskjeldsen/am-imaging)** - Image processing library
 - **[am-png](https://github.com/anderskjeldsen/am-png)** - PNG format support
