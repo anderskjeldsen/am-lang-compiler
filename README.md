@@ -11,11 +11,6 @@
 
 **AmLang** is designed for developers who want the **productivity of modern languages** with the **performance and portability of C**. Whether you're building embedded applications, cross-platform tools, or high-performance systems, AmLang gives you:
 
-### ⚡ **Blazing Fast Development**
-- **~50ms startup time** - 60x faster than JVM-based compilers
-- **Instant compilation** to optimized C code
-- **Native executables** with zero runtime dependencies
-
 ### 🎯 **Modern Language Features**
 - **Object-oriented programming** with classes, inheritance, and interfaces
 - **Built-in unit testing** with comprehensive mocking framework
@@ -31,18 +26,9 @@
 
 ### 🌍 **Universal Compatibility**
 - **Compile anywhere, run everywhere** - generates portable C code
-- **Cross-platform builds** for Linux, macOS, Windows
-- **Embedded systems** support including Amiga and legacy platforms
+- **Cross-platform builds** for Linux, macOS, AmigaOS, Morphos and more.
 - **Native C interop** for seamless library integration
 
-## ⚡ Performance Comparison
-
-| Metric | AmLang Native | Traditional Compilers | JVM Languages |
-|--------|---------------|----------------------|---------------|
-| **Startup Time** | ~50ms | ~100-500ms | ~2-3s |
-| **Memory Usage** | ~50MB | ~100-200MB | ~150-300MB |
-| **Binary Size** | ~50MB | ~10-50MB | Requires Runtime |
-| **Dependencies** | **None** | System libs | Java Runtime |
 
 ## 📦 Quick Installation
 
@@ -334,65 +320,12 @@ docker run -it -v $(pwd):/workspace amiga-gcc
 amlc build . -bt amigaos_docker
 ```
 
-The Docker image includes:
-- **Complete Amiga GCC toolchain** (m68k-amigaos-gcc)
-- **AmiSSL library support** for secure networking
-- **All necessary SDKs** (AHI, CGX) for multimedia development
-- **Build tools** (sfdc, fd2sfd, binutils)
-
-## 🎨 Language Features
-
-### Object-Oriented Programming
-- **Classes and Objects** with inheritance
-- **Interfaces** and abstract classes
-- **Polymorphism** and method overriding
-- **Access modifiers** (public, private, protected)
-
-### Memory Management
-- **Automatic reference counting** - no garbage collection pauses
-- **Memory leak tracking** in debug builds
-- **Manual memory control** when needed
-
-### Concurrency
-- **Built-in threading** with `suspend` functions
-- **Thread-safe collections** and utilities
-- **Async/await patterns** for modern concurrency
-
-### Native Integration
-- **C library bindings** with automatic header generation
-- **Platform-specific code** with conditional compilation
-- **Inline C code** for performance-critical sections
-
-## 🚀 Why Developers Choose AmLang
-
-### For System Programming
-> *"AmLang gives me the control of C with the productivity of modern languages. Perfect for embedded development."*
-
-### For Cross-Platform Apps
-> *"Write once, compile everywhere. The C output runs on platforms I never thought possible."*
-
-### For Performance-Critical Code
-> *"50ms startup time means my CLI tools feel instant. Users love the responsiveness."*
-
-### For Legacy Platform Support
-> *"Finally, a modern language that can target Amiga and other retro systems!"*
-
 ## 🆕 What's New in v0.6.4
 
 ### 🧪 **Complete Mocking Framework**
 - `mock` keyword for overriding class behavior in tests
 - `scope` management for nested mocks with automatic cleanup
 - Full integration with existing unit testing framework
-
-### ⚡ **Native Executable Revolution**
-- **60x faster startup** compared to JVM-based alternatives
-- **3x less memory usage** for improved performance
-- **Zero dependencies** - distribute single executable files
-
-### 🏗️ **Automated Release Pipeline**
-- Multi-platform native builds for all major operating systems
-- Professional GitHub releases with comprehensive documentation
-- One-line installation script with automatic platform detection
 
 ## 📚 Learn More
 
@@ -411,16 +344,3 @@ Explore real-world projects in the [`examples/`](examples/) directory:
 - **[am-ui](https://github.com/anderskjeldsen/am-ui)** - GUI framework for AmLang
 - **[am-imaging](https://github.com/anderskjeldsen/am-imaging)** - Image processing library
 - **[am-png](https://github.com/anderskjeldsen/am-png)** - PNG format support
-
-## 🤝 Contributing
-
-AmLang is actively developed and welcomes contributions! While the main development happens in a private repository, we encourage:
-
-- **Bug reports** and feature requests via GitHub Issues
-- **Example projects** and tutorials
-- **Community libraries** and tools
-- **Documentation improvements**
-
----
-
-**Ready to start building?** [Download AmLang](https://github.com/anderskjeldsen/am-lang-compiler/releases) and experience the future of systems programming!
