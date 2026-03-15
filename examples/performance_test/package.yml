@@ -1,0 +1,26 @@
+id: "performance_test"
+version: "1.0.0"
+type: "application"
+dependencies:
+  - id: am-lang-core
+    realm: github
+    type: git-repo
+    tag: latest
+    url: https://github.com/anderskjeldsen/am-lang-core.git
+  - id: am-tests
+    testOnly: true
+    realm: github
+    type: git-repo
+    tag: latest
+    url: https://github.com/anderskjeldsen/am-tests.git
+
+platforms:
+  - id: "libc"
+    abstract: true
+  - id: "linux-x64"
+    extends: "libc"
+    gccCommand: "gcc -O3 -save-temps=obj"
+
+buildTargets:
+  - id: "linux-x64"
+    platform: "linux-x64"

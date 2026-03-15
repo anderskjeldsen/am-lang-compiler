@@ -280,6 +280,32 @@ class ServiceTest {
 }
 ```
 
+## ⚡ Performance
+
+Performance benchmark summary from `examples/performance_test/ReadMe.md`.
+
+Workload used for all runs:
+- Iterations: `1000`
+- Count per iteration: `100000`
+- Modulo: `7` (skip when `i % modulo == 0`)
+- Total points processed: `100000000`
+
+| Language | `handlePoints` (array) | `handlePoints2` (no array) |
+|---|---:|---:|
+| Rust (`rustc -C opt-level=2`) | 476 ms | 331 ms |
+| C (pure, gcc -O3) | 986 ms | 846 ms |
+| AmLang | 986 ms | 819 ms |
+| Go | 1290 ms | 867 ms |
+| Java | 1632 ms | 881 ms |
+| C# (`struct Point`) | 1946 ms | 826 ms |
+| Python | 52151 ms | 34041 ms |
+
+Notes:
+- `handlePoints`: create all points in an array, then sum in a second pass.
+- `handlePoints2`: create point and sum immediately (no array).
+- The modulo branch (`i % modulo == 0`) is intentional: it helps prevent trivial constant-folding/dead-code style optimizations so compilers still emit realistic machine code for the loop workload.
+- Full benchmark details: `examples/performance_test/ReadMe.md`.
+
 ## 📊 Platform Support
 
 ### Native Compilation Targets
@@ -319,6 +345,48 @@ docker run -it -v $(pwd):/workspace amiga-gcc
 # Compile AmLang project for AmigaOS
 amlc build . -bt amigaos_docker
 ```
+
+## 🆕 What's New in v0.9.0
+
+### 🧱 Struct Support Improvements
+- Struct declarations and initialization have been improved.
+- Nested structs are better supported in everyday usage.
+- Better struct-related diagnostics and validation behavior.
+
+### 📌 Struct Semantics
+- Struct variables are handled as struct pointers at runtime.
+- Passing a struct to a function passes the pointer (shared struct data).
+- Returning a struct creates a copy.
+- Storing a struct in an array creates a copy of the struct value.
+- Reading a struct from an array currently depends on usage.
+- Direct element member access (for example `arr[i].x`) works on the array element reference.
+- Assigning an element to a struct variable (for example `var p = arr[i]`) creates a copy.
+- Planned for v0.10.0: make copy-vs-reference explicit for struct reads (for example use `*arr[i]` for copy), and report compile errors when a reference/value mismatch is ambiguous.
+
+### 🏷️ Struct Initializer Named Fields and Type Stability
+- Struct initializer named fields are more reliable and better validated.
+- Type-handling improvements reduce edge-case compile failures.
+- Better behavior in complex call/type scenarios.
+
+### 🔧 Correctness and Tooling Improvements
+- Fixes across overload resolution, expression ordering, static call correctness, and array modification behavior.
+- Improved primitive-vs-`null` handling and `return`-statement edge cases.
+- Improved release workflow and publish diagnostics.
+
+## 🆕 What's New in v0.8.0
+
+### 🔁 Enhanced `each` Loop Syntax
+- Added intuitive iteration syntax: `each(item in collection) { ... }`.
+- Existing syntax `each(collection, item)` remains fully supported.
+
+### 🎯 Function Pointer Property Improvements
+- Improved direct invocation of function-pointer properties (for example: `this.callback()`).
+- Improved C code generation reliability and diagnostics for function-pointer usage.
+- Improved memory handling and type validation for callback-style patterns.
+
+### λ Anonymous Function Property Invocation
+- Improved direct invocation of anonymous functions stored in properties.
+- Improved behavior for patterns like `this.operation(a, b)`.
 
 ## 🆕 What's New in v0.6.4
 

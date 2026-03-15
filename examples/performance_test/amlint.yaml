@@ -1,0 +1,32 @@
+# AmLang Linter Configuration
+# This file defines code quality and style rules for your AmLang project
+
+# Naming Conventions
+namingConventions:
+  # Enforce naming case styles
+  enforceClassNameCase: "PascalCase"        # PascalCase, camelCase, snake_case
+  enforceFunctionNameCase: "camelCase"      # camelCase, snake_case
+  enforceVariableNameCase: "camelCase"      # camelCase, snake_case
+  
+  # Custom naming patterns (regex)
+  # classNamePattern: "^[A-Z][a-zA-Z0-9]*$"
+  # functionNamePattern: "^[a-z][a-zA-Z0-9]*$"
+  # variableNamePattern: "^[a-z][a-zA-Z0-9]*$"
+  # constantNamePattern: "^[A-Z][A-Z0-9_]*$"
+
+# Code Style Rules
+codeStyle:
+  maxLineLength: 120                        # Maximum characters per line
+  maxFunctionLength: 150                    # Maximum lines per function
+  maxParameterCount: 15                     # Maximum parameters per function
+  requireBracesForSingleStatement: false    # Require braces for single statements
+  forbidEmptyBlocks: true                   # Forbid empty code blocks
+
+# Best Practices
+bestPractices:
+  forbidMagicNumbers: false                 # Forbid magic numbers (use constants)
+  requireDocComments: false                 # Require documentation comments
+  forbidUnusedVariables: true               # Forbid unused variables
+  forbidUnusedParameters: false             # Forbid unused parameters
+  requireExplicitTypes: false               # Require explicit type annotations
+  forbidDivisionByZeroLiteral: true         # Forbid literal division by zero

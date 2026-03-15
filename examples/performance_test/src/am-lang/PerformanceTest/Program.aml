@@ -1,0 +1,88 @@
+namespace PerformanceTest
+{
+
+    struct Point {
+        var x: Long
+        var y: Long
+    }
+
+    class Application {
+        import Am.Lang
+        
+        static fun main(args: String[]) {
+            "Welcome to performance_test!".println()
+            
+            var iterations = 1000L
+            var count = 100000L
+            var modulo = 7L
+
+            if (args.length() >= 1) {
+                iterations = Long.parse(args[0])
+            }
+            if (args.length() >= 2) {
+                count = Long.parse(args[1])
+            }
+            if (args.length() >= 3) {
+                modulo = Long.parse(args[2])
+            }
+            
+            Application.handlePoints(iterations, count, modulo)
+            Application.handlePoints2(iterations, count, modulo)
+
+        }
+
+        static fun handlePoints(iterations: Long, count: Long, modulo: Long) {
+            var startTime = Date.now()
+            var sumX = 0L
+            var sumY = 0L
+
+            for (j = 0L to iterations) {
+                var points: Point[] = new Point[count]
+                for (i = 0 to count) {
+                    points[i] = {
+                        x: i,
+                        y: i * 2L
+                    }
+                }
+
+                for (i = 0 to count) {
+                    if (i % modulo != 0L) {
+                        sumX += points[i].x
+                        sumY += points[i].y
+                    }
+                }
+            }
+
+            var endTime = Date.now()
+
+            var deltaTime = endTime.getValue() - startTime.getValue()
+            "Time taken to create and sum ${count * iterations} points: ${deltaTime} ms".println()
+            "Sum of X: ${sumX}, Sum of Y: ${sumY}".println()
+        }
+
+        static fun handlePoints2(iterations: Long, count: Long, modulo: Long) {
+            var startTime = Date.now()
+            var sumX = 0L
+            var sumY = 0L
+
+            for (j = 0L to iterations) {
+                for (i = 0L to count) {
+                    if (i % modulo != 0L) {
+                        var point: Point = {
+                            x: i,
+                            y: i * 2L
+                        }
+                        sumX += point.x
+                        sumY += point.y
+                    }
+                }
+            }
+
+            var endTime = Date.now()
+
+            var deltaTime = endTime.getValue() - startTime.getValue()
+            "Time taken to create and sum without array ${count * iterations} points: ${deltaTime} ms".println()
+            "Sum of X: ${sumX}, Sum of Y: ${sumY}".println()
+        }
+    }
+}
