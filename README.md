@@ -4,7 +4,8 @@
 > Perfect for cross-platform development, embedded systems, and high-performance applications
 
 [![GitHub Release](https://img.shields.io/github/v/release/anderskjeldsen/am-lang-compiler)](https://github.com/anderskjeldsen/am-lang-compiler/releases)
-[![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue)](#installation)
+[![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Java%2021-blue)](#installation)
+[![Targets](https://img.shields.io/badge/targets-AmigaOS%203.x%20%7C%20MorphOS%20%7C%20Linux%20%7C%20MacOS-blue)](#platform-support)
 [![Performance](https://img.shields.io/badge/startup-~50ms-green)](#performance)
 
 ## 🚀 Why Choose AmLang?
@@ -38,7 +39,6 @@ Download the latest native binary from [GitHub Releases](https://github.com/ande
 - **Linux x64**: `amlc-linux-[version].tar.gz`
 - **macOS x64**: `amlc-mac-[version].tar.gz` 
 - **macOS ARM64**: `amlc-mac-arm64-[version].tar.gz`
-- **Windows x64**: `amlc-windows-[version].zip`
 - **Universal JAR**: `amlc-[version].jar` (requires Java 21+)
 
 ### Manual Installation
@@ -294,6 +294,8 @@ Workload used for all runs:
 | C# (`struct Point`) | 1946 ms | 826 ms |
 | Python | 52151 ms | 34041 ms |
 
+<sub>These results were measured on a Dell XPS 15 (2018) with an Intel Core i7 CPU, NVIDIA GTX 1050-class GPU, 32 GB RAM, and 1 TB SSD.</sub>
+
 Notes:
 - `handlePoints`: create all points in an array, then sum in a second pass.
 - `handlePoints2`: create point and sum immediately (no array).
@@ -303,11 +305,9 @@ Notes:
 ## 📊 Platform Support
 
 ### Native Compilation Targets
-- ✅ **Linux x64** - Full support with native binaries
-- ✅ **macOS x64** - Intel Mac support
-- ✅ **macOS ARM64** - Apple Silicon (M1/M2) support
-- ✅ **Windows x64** - Native Windows executables
-- ✅ **Amiga** - Classic Amiga cross-compilation
+- ✅ **Linux (x64, ARM64, PowerPC)** - Full support with native binaries
+- ✅ **macOS (x64, ARM64)** - Intel and Apple Silicon support
+- ✅ **AmigaOS 3.x** - Classic Amiga cross-compilation
 - ✅ **MorphOS** - Modern Amiga-compatible systems
 
 ### Runtime Requirements
