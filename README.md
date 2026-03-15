@@ -18,12 +18,6 @@
 - **Concurrency support** with built-in threading
 - **Clean syntax** inspired by Kotlin and C#
 
-### 🆕 **New in v0.7.0**
-- **Feature toggles** - Conditional compilation with `#require` directives for cross-platform development
-- **Float/Double support** - Native floating-point types with scientific notation (e.g., `1.23e-4F`)
-- **Code linting** - Built-in style checking with `amlc lint` command
-- **Documentation generation** - Auto-generate API docs with `amlc docs` command
-
 ### 🌍 **Universal Compatibility**
 - **Compile anywhere, run everywhere** - generates portable C code
 - **Cross-platform builds** for Linux, macOS, AmigaOS, Morphos and more.
@@ -387,6 +381,13 @@ amlc build . -bt amigaos_docker
 ### λ Anonymous Function Property Invocation
 - Improved direct invocation of anonymous functions stored in properties.
 - Improved behavior for patterns like `this.operation(a, b)`.
+
+## 🆕 What's New in v0.7.0
+
+- Feature toggles with `#require` directives for cross-platform development.
+- Float/Double support with scientific notation (for example `1.23e-4F`).
+- Built-in linting via `amlc lint`.
+- API documentation generation via `amlc docs`.
 
 ## 🆕 What's New in v0.6.4
 
