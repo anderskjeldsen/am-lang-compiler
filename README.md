@@ -4,9 +4,9 @@
 > Perfect for cross-platform development, embedded systems, and high-performance applications
 
 [![GitHub Release](https://img.shields.io/github/v/release/anderskjeldsen/am-lang-compiler)](https://github.com/anderskjeldsen/am-lang-compiler/releases)
-[![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Java%2021-blue)](#installation)
-[![Targets](https://img.shields.io/badge/targets-AmigaOS%203.x%20%7C%20MorphOS%20%7C%20Linux%20%7C%20MacOS-blue)](#platform-support)
-[![Performance](https://img.shields.io/badge/startup-~50ms-green)](#performance)
+[![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Java%2021-blue)](#platform)
+[![Targets](https://img.shields.io/badge/targets-AmigaOS%203.x%20%7C%20MorphOS%20%7C%20Linux%20%7C%20MacOS-blue)](#targets)
+[![Performance](https://img.shields.io/badge/performance-benchmarks-green)](#performance)
 
 ## 🚀 Why Choose AmLang?
 
@@ -25,6 +25,7 @@
 - **Native C interop** for seamless library integration
 
 
+<a id="platform"></a>
 ## 📦 Quick Installation
 
 ### One-Line Install (Recommended)
@@ -274,6 +275,7 @@ class ServiceTest {
 }
 ```
 
+<a id="performance"></a>
 ## ⚡ Performance
 
 Performance benchmark summary from `examples/performance_test/ReadMe.md`.
@@ -302,6 +304,7 @@ Notes:
 - The modulo branch (`i % modulo == 0`) is intentional: it helps prevent trivial constant-folding/dead-code style optimizations so compilers still emit realistic machine code for the loop workload.
 - Full benchmark details: `examples/performance_test/ReadMe.md`.
 
+<a id="targets"></a>
 ## 📊 Platform Support
 
 ### Native Compilation Targets
