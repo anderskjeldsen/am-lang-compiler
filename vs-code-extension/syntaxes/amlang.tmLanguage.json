@@ -95,11 +95,11 @@
       "patterns": [
         {
           "name": "keyword.control.amlang",
-          "match": "\\b(if|else|for|while|break|continue|each|try|catch|finally|throw|return|susp|new|nameof|as|is|switch|case|default)\\b"
+          "match": "\\b(if|else|for|while|break|continue|each|try|catch|finally|throw|return|new|nameof|as|is|switch|case|default)\\b"
         },
         {
           "name": "keyword.declaration.amlang",
-          "match": "\\b(namespace|class|interface|enum|import|static|ext|var|const|fun|public|private|native|const|abstract|open|override)\\b"
+          "match": "\\b(namespace|class|interface|enum|import|static|ext|var|const|fun|public|private|native|const|abstract|open|override|inline|suspend)\\b"
         },
         {
           "name": "constant.language.amlang",
@@ -111,7 +111,7 @@
       "patterns": [
         {
           "name": "storage.type.amlang",
-          "match": "\\b(Bool|Byte|UByte|Short|UShort|Int|UInt|Long|ULong|Float|Double|String|Any|Object|void)\\b"
+          "match": "\\b(Bool|Byte|UByte|Short|UShort|Int|UInt|Long|ULong|Float|Double|String|Any|Object|void|struct)\\b"
         },
         {
           "name": "storage.type.array.amlang",
