@@ -114,7 +114,4 @@ Class properties now accept the bare `const propName: Type` form alongside the o
 
 ## Upgrade Notes
 
-- v0.10.0 is intended as a safe upgrade from v0.9.x.
-- Existing code with no `inline`, no `init {}`, and no `#implementationPlatforms` compiles as before.
-- If you maintain a class with explicit constructor body that performed constructor-parameter-derived setup, consider migrating to `init {}` for clarity.
-- If you maintain a `native class` with platform-specific C in `src/native-c/<platform>/`, opt in with `#implementationPlatforms` to stop inheriting the base-platform stub.
+- If you maintain a `native class` with platform-specific C in `src/native-c/<platform>/`, opt in with `#implementationPlatforms` to stop inheriting the base-platform stub. Native implementations are on class level, and can no longer be mixed between platforms and base platforms. am-lang libraries will be updated shortly. 
