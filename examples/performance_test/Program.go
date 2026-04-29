@@ -12,6 +12,26 @@ type Point struct {
 	y int64
 }
 
+func handleHashSet(iterations int64, count int64, modulo int64) {
+	start := time.Now()
+	var totalSize int64 = 0
+
+	for j := int64(0); j < iterations; j++ {
+		set := make(map[int]struct{}, count)
+		for i := int64(0); i < count; i++ {
+			if i%modulo == 0 {
+				continue
+			}
+			set[int(i)] = struct{}{}
+		}
+		totalSize += int64(len(set))
+	}
+
+	elapsed := time.Since(start).Milliseconds()
+	fmt.Printf("Time taken to populate HashSet<Int> %d x %d values: %d ms\n", iterations, count, elapsed)
+	fmt.Printf("Total accumulated size: %d\n", totalSize)
+}
+
 func handlePoints(iterations int64, count int64, modulo int64) {
 	start := time.Now()
 	var sumX int64 = 0
@@ -87,4 +107,5 @@ func main() {
 	fmt.Println("Welcome to performance_test!")
 	handlePoints(iterations, count, modulo)
 	handlePoints2(iterations, count, modulo)
+	handleHashSet(iterations, count, modulo)
 }

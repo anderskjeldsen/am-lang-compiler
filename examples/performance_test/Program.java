@@ -1,3 +1,5 @@
+import java.util.HashSet;
+
 public class Program {
     private static final class Point {
         final long x;
@@ -37,6 +39,25 @@ public class Program {
         System.out.println("Welcome to performance_test!");
         handlePoints(iterations, count, modulo);
         handlePoints2(iterations, count, modulo);
+        handleHashSet(iterations, count, modulo);
+    }
+
+    static void handleHashSet(long iterations, long count, long modulo) {
+        long startTime = System.currentTimeMillis();
+        long totalSize = 0;
+
+        for (long j = 0; j < iterations; j++) {
+            HashSet<Integer> set = new HashSet<>();
+            for (long i = 0; i < count; i++) {
+                if (i % modulo == 0) continue;
+                set.add((int) i);
+            }
+            totalSize += set.size();
+        }
+
+        long deltaTime = System.currentTimeMillis() - startTime;
+        System.out.println("Time taken to populate HashSet<Int> " + iterations + " x " + count + " values: " + deltaTime + " ms");
+        System.out.println("Total accumulated size: " + totalSize);
     }
 
     static void handlePoints(long iterations, long count, long modulo) {
