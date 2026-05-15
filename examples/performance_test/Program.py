@@ -10,6 +10,23 @@ class Point:
         self.y = y
 
 
+def handle_hash_set(iterations: int, count: int, modulo: int) -> None:
+    start = time.perf_counter()
+    total_size = 0
+
+    for _ in range(iterations):
+        s: set[int] = set()
+        for i in range(count):
+            if i % modulo == 0:
+                continue
+            s.add(i)
+        total_size += len(s)
+
+    elapsed_ms = int((time.perf_counter() - start) * 1000)
+    print(f"Time taken to populate HashSet<Int> {iterations} x {count} values: {elapsed_ms} ms")
+    print(f"Total accumulated size: {total_size}")
+
+
 def handle_points(iterations: int, count: int, modulo: int) -> None:
     start = time.perf_counter()
     sum_x = 0
@@ -71,6 +88,7 @@ def main() -> None:
     print("Welcome to performance_test!")
     handle_points(iterations, count, modulo)
     handle_points2(iterations, count, modulo)
+    handle_hash_set(iterations, count, modulo)
 
 
 if __name__ == "__main__":

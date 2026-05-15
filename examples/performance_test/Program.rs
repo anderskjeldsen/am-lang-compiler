@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::env;
 use std::time::Instant;
 
@@ -5,6 +6,29 @@ use std::time::Instant;
 struct Point {
     x: i64,
     y: i64,
+}
+
+fn handle_hash_set(iterations: i64, count: i64, modulo: i64) {
+    let start = Instant::now();
+    let mut total_size: i64 = 0;
+
+    for _ in 0..iterations {
+        let mut set: HashSet<i32> = HashSet::with_capacity(count as usize);
+        for i in 0..count {
+            if i % modulo == 0 {
+                continue;
+            }
+            set.insert(i as i32);
+        }
+        total_size += set.len() as i64;
+    }
+
+    let elapsed_ms = start.elapsed().as_millis();
+    println!(
+        "Time taken to populate HashSet<Int> {} x {} values: {} ms",
+        iterations, count, elapsed_ms
+    );
+    println!("Total accumulated size: {}", total_size);
 }
 
 fn handle_points(iterations: i64, count: i64, modulo: i64) {
@@ -84,4 +108,5 @@ fn main() {
     println!("Welcome to performance_test!");
     handle_points(iterations, count, modulo);
     handle_points2(iterations, count, modulo);
+    handle_hash_set(iterations, count, modulo);
 }

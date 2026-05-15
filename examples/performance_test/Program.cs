@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 public static class Program
@@ -49,6 +50,28 @@ public static class Program
         Console.WriteLine("Welcome to performance_test!");
         HandlePoints(iterations, count, modulo);
         HandlePoints2(iterations, count, modulo);
+        HandleHashSet(iterations, count, modulo);
+    }
+
+    private static void HandleHashSet(long iterations, long count, long modulo)
+    {
+        var sw = Stopwatch.StartNew();
+        long totalSize = 0;
+
+        for (long j = 0; j < iterations; j++)
+        {
+            var set = new HashSet<int>();
+            for (long i = 0; i < count; i++)
+            {
+                if (i % modulo == 0) continue;
+                set.Add((int)i);
+            }
+            totalSize += set.Count;
+        }
+
+        sw.Stop();
+        Console.WriteLine($"Time taken to populate HashSet<Int> {iterations} x {count} values: {sw.ElapsedMilliseconds} ms");
+        Console.WriteLine($"Total accumulated size: {totalSize}");
     }
 
     private static void HandlePoints(long iterations, long count, long modulo)

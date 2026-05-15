@@ -196,14 +196,38 @@ enum class Color {
 ```
 
 ### `struct`
-Declares a structure type (value type).
+Declares a structure type with reference semantics.
+
+**Important**: Structs in AmLang use reference semantics but are allocated on the stack. When you assign one struct variable to another, you're copying the reference (pointer), not the data.
 
 ```amlang
 struct Point {
     var x: Int
     var y: Int
 }
+
+// Struct must be initialized with an initializer
+var p1: Point {
+    x: 10
+    y: 20
+}
+
+// Assigning to another variable copies the reference
+var p2 = p1  // p2 and p1 point to the same struct data
+
+// Modifying through p2 affects p1
+p2.x = 30
+p1.x.toString().println()  // Prints: 30
+
+// When moved into an array, struct data is copied
+var points = [p1, p2]  // Array contains copies of the struct data
 ```
+
+**Memory Model**:
+- The initializer allocates the struct and creates a hidden variable
+- The declared variable is a pointer (`struct MyStruct *`) to the allocated data
+- Variable assignment copies the pointer, not the data
+- Array insertion copies the struct data into the array
 
 ## Extension Keywords
 
