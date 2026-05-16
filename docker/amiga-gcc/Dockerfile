@@ -59,7 +59,8 @@ FROM toolchain AS final
 RUN cd /root/amiga-gcc && \
     make zlib && \
     make libpng && \
-    make amissl
+    make amissl && \
+    make mui
 
 # Cleanup build directory to reduce image size
 RUN cd / && \
