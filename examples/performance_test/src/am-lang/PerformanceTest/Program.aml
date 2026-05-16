@@ -8,6 +8,7 @@ namespace PerformanceTest
 
     class Application {
         import Am.Lang
+        import Am.Collections
         
         static fun main(args: String[]) {
             "Welcome to performance_test!".println()
@@ -28,6 +29,7 @@ namespace PerformanceTest
             
             Application.handlePoints(iterations, count, modulo)
             Application.handlePoints2(iterations, count, modulo)
+            Application.handleHashSet(iterations, count, modulo)
 
         }
 
@@ -58,6 +60,26 @@ namespace PerformanceTest
             var deltaTime = endTime.getValue() - startTime.getValue()
             "Time taken to create and sum ${count * iterations} points: ${deltaTime} ms".println()
             "Sum of X: ${sumX}, Sum of Y: ${sumY}".println()
+        }
+
+        static fun handleHashSet(iterations: Long, count: Long, modulo: Long) {
+            var startTime = Date.now()
+            var totalSize = 0L
+
+            for (j = 0L to iterations) {
+                var set = new HashSet<Int>()
+                for (i = 0L to count) {
+                    if (i % modulo != 0L) {
+                        set.add(i as Int)
+                    }
+                }
+                totalSize += set.getSize() as Long
+            }
+
+            var endTime = Date.now()
+            var deltaTime = endTime.getValue() - startTime.getValue()
+            "Time taken to populate HashSet<Int> ${iterations} x ${count} values: ${deltaTime} ms".println()
+            "Total accumulated size: ${totalSize}".println()
         }
 
         static fun handlePoints2(iterations: Long, count: Long, modulo: Long) {
