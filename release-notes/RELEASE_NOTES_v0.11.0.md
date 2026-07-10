@@ -16,13 +16,15 @@ class Person(var name: String!, var nickname: String) {
     // name is non-null; nickname is nullable (can be null)
 }
 
-fun greet(p: Person!) {
-    "Hello, ".println()
-    p.name.println()             // OK — name is non-null
-    if (p.nickname != null) {
-        p.nickname.println()     // OK inside null-guard
+class Greeter {
+    static fun greet(p: Person!) {
+        "Hello, ".println()
+        p.name.println()             // OK — name is non-null
+        if (p.nickname != null) {
+            p.nickname.println()     // OK inside null-guard
+        }
+        // p.nickname.println()      // Compile error — needs !! or a guard
     }
-    // p.nickname.println()       // Compile error — needs !! or a guard
 }
 ```
 
@@ -60,7 +62,7 @@ See the block comment at the top of `libc/core_inline_functions.h` for the full 
 
 `new` allocation failure is now a catchable AmLang exception instead of a SIGSEGV.
 
-**Example:**
+**Example (inside a method body):**
 ```amlang
 try {
     var huge = new UByte[hugeSize]
@@ -84,28 +86,51 @@ Multi-parent interfaces and iface-to-iface conversions now work as you'd expect.
 
 **Transitive `iface_implementations`:**
 ```amlang
-interface Callable { fun call() }
-interface Named { fun name(): String }
+interface Callable {
+    fun call()
+}
+interface Named {
+    fun name(): String
+}
 interface CallableNamed : Callable, Named { }
 
 class MyThing : CallableNamed {
-    override fun call() { ... }
-    override fun name() = "MyThing"
+    override fun call() {
+        "called".println()
+    }
+    override fun name(): String {
+        return "MyThing"
+    }
 }
 
-var c: Callable = new MyThing()        // OK — transitive
-var n: Named    = new MyThing()        // OK — transitive
+class Demo {
+    static fun main() {
+        var c: Callable = new MyThing()   // OK — MyThing transitively implements Callable
+        var n: Named    = new MyThing()   // OK — and transitively implements Named
+    }
+}
 ```
 
 **Implicit iface-to-iface upcast:**
 ```amlang
 interface Base { }
-interface Sub : Base { fun subMethod() }
+interface Sub : Base {
+    fun subMethod()
+}
 
-fun takesBase(b: Base) { ... }
+class SubImpl : Sub {
+    override fun subMethod() { }
+}
 
-var s: Sub = someImpl
-takesBase(s)                            // OK — Sub extends Base, implicit upcast
+class Demo {
+    static fun takesBase(b: Base) {
+        // ...
+    }
+    static fun main() {
+        var s: Sub = new SubImpl()
+        Demo.takesBase(s)                 // OK — Sub extends Base, implicit upcast
+    }
+}
 ```
 
 Explicit `as` is still required for casts between unrelated interfaces (where the runtime shape check has to be deferred).
@@ -145,11 +170,17 @@ Sibling to `dockerBuild` and the pre-existing `dockerRun`; the same image-allowl
 `#runOnExit`, `#runOnStartup`, and the new `#onNativeTearDown` directives now accept an optional integer priority:
 
 ```amlang
-#runOnExit(1000)
-static fun flushCaches() { ... }        // runs later
+class Cleanup {
+    #runOnExit(1000)
+    static fun flushCaches() {
+        // ... runs later
+    }
 
-#runOnExit(-500)
-static fun snapshotMetrics() { ... }    // runs earlier
+    #runOnExit(-500)
+    static fun snapshotMetrics() {
+        // ... runs earlier
+    }
+}
 ```
 
 Hooks emit into `startup.c` in ascending priority order — a higher number runs later, a negative number runs earlier. Ordering is global across all classes (not per-class); equal priorities preserve class-discovery order. Omit the parentheses to keep the default priority 0.
@@ -181,7 +212,11 @@ New mechanism for the compiler to provide a function body directly at codegen ti
 First user: **`Am.Lang.Runtime.getPlatform(): String`** returns the compile-time `AM_PLATFORM_ID` string (`"linux-x64"`, `"macos-arm"`, `"amigaos"`, ...). Backed by a new `-DAM_PLATFORM_ID="<platform.id>"` gcc flag emitted for both production and test makefiles.
 
 ```amlang
-Am.Lang.Runtime.getPlatform().println()   // "linux-x64" / "amigaos" / ...
+class Demo {
+    static fun main() {
+        Runtime.getPlatform().println()   // "linux-x64" / "amigaos" / ...
+    }
+}
 ```
 
 ### Polyvariant Class Split
