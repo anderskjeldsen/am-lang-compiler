@@ -44,9 +44,9 @@ Download the latest native binary from [GitHub Releases](https://github.com/ande
 
 ### Manual Installation
 ```bash
-# Download and extract (example for Linux)
-wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.7.0.tar.gz
-tar -xzf amlc-linux-0.7.0.tar.gz
+# Download and extract (example for Linux, current release is v0.11.0)
+wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.11.0.tar.gz
+tar -xzf amlc-linux-0.11.0.tar.gz
 chmod +x amlc-linux
 
 # Verify installation
@@ -342,6 +342,51 @@ docker run -it -v $(pwd):/workspace amiga-gcc
 # Compile AmLang project for AmigaOS
 amlc build . -bt amigaos_docker
 ```
+
+## 🆕 What's New in v0.11.0
+
+### 🎯 Draft Nullability Syntax
+- Bare `T` is now **nullable by default**; `T!` marks a type non-null. Assigning a nullable to a non-null slot inserts an implicit `!!` conversion.
+- Opt back into pre-0.11.0 behavior with `legacyObjectNullability` in `package.yml`'s `compilerFlags`, or per class with `#legacyObjectNullability` for a gradual file-by-file migration.
+
+### 🧵 Thread-Safe ARC
+- Cross-thread reference counting via **wrapper aobjects**. Reads and writes from a foreign thread transparently redirect via `__unwrap()` — near-free when no wrappers exist (~one load + branch total).
+- AmLang source needs no changes. Hand-written native C in your package must `__unwrap()` before any data deref of an aobject that might have crossed threads.
+
+### 🛑 OutOfMemoryException
+- `new` codegen null-checks the allocation and throws a preallocated `Am.Lang.OutOfMemoryException` singleton on failure — catchable with an ordinary `try` / `catch`. Before v0.11.0, allocation failure meant a SIGSEGV in the constructor call.
+
+### 🔗 Interface Improvements
+- Implicit `SubIface → SuperIface` conversion when the source transitively extends the target — drops the "declare every super-iface on the class" workaround.
+- **Multi-parent interfaces** (`interface X : A, B`) resolve inherited functions at call sites.
+- `is SomeInterface` finally works (previously always returned `false`).
+
+### 🐳 `buildTargets[].dockerTest`
+- Cross-compile in one container, run tests in another. Landed with the workspace's `amlang-amiberry:latest` image so AmigaOS m68k tests run end-to-end under Amiberry — no local AmigaOS install needed.
+
+### 🏗️ `buildTargets[].sshBuild`
+- SSH + rsync analog of `dockerBuild`. Cross-compile on a remote host, pull the binaries back.
+
+### 🧹 Lifecycle Hook Priorities
+- `#runOnExit`, `#runOnStartup`, and the new `#onNativeTearDown` accept an optional integer priority: `#runOnExit(1000)`. Hooks fire in ascending order across all classes.
+
+**Full release notes:** [release-notes/RELEASE_NOTES_v0.11.0.md](release-notes/RELEASE_NOTES_v0.11.0.md).
+
+## 🆕 What's New in v0.10.0
+
+### 🚀 `inline` Functions
+- New `inline` modifier expands calls at the C call site — zero-overhead abstractions and full GCC constant-folding through the expansion.
+
+### 🖥️ `#implementationPlatforms` Directive
+- Declares which platforms need their own per-platform native stub. Lets one native class share a `libc` implementation across linux/macos while providing custom AmigaOS/MorphOS implementations side-by-side.
+
+### 🧬 `init { }` Blocks
+- Runs as part of object construction, after the primary constructor and body-declared property defaults. Composes through inheritance — each class's `init` runs in base-to-derived order.
+
+### 🧱 Struct Equality
+- `==` / `!=` on struct values compare fields recursively instead of pointer identity. Nested structs handled correctly.
+
+**Full release notes:** [release-notes/RELEASE_NOTES_v0.10.0.md](release-notes/RELEASE_NOTES_v0.10.0.md).
 
 ## 🆕 What's New in v0.9.0
 
