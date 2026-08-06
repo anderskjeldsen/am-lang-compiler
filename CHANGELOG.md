@@ -2,6 +2,43 @@
 
 All notable compiler changes are documented here.
 
+## [0.12.0] - 2026-08-06
+
+### Changed
+
+#### Borrowed parameter convention (performance)
+
+- **Object parameters and `this` are no longer retained by the callee.** Every call site already materialises its arguments as OWNED temporaries that live until the caller's block ends — strictly longer than the call — so the callee-side retain/release bracket was pure overhead: two refcount ops per object argument per call, and under thread-safe ARC two global-lock round trips per call for a cross-thread receiver. Ownership-taking positions stay explicit: returns are `+1` via `__retain_function_return`, property stores retain via propref, and `suspend` functions keep their entry retains (a suspended frame outlives the caller's owned temps). **Native code that stashes an object pointer beyond the call must now retain explicitly** — see the `DO-NOT-STRIP` worker reference in `Thread.c`. Parameters the body assigns to are the documented exception and are bracketed automatically (see below).
+
+### Added
+
+- **`#obsolete` directive** on functions, with an optional message: `#obsolete 'use readAll() instead'`. Every call site produces `Warning: Function '<name>' is obsolete: <message>`. Covers instance, static and extension functions. Warnings are de-duplicated because the binder runs once per function variant.
+- **`Am.Lang.BuildInfo`**, a compiler-synthesised class mapping `id -> version` for every non-test package compiled into the binary, backing `Am.Lang.Runtime.getPackages()`. Emitted as ordinary AmLang source through the normal parser pipeline, so it binds, validates and renders like hand-written code. A loaded package counts as test-only when nothing but `testOnly` declarations pull it in; the root package is never test-only.
+- **`instances` keyword.** `instances(SomeClass)` reads the live per-class instance count the runtime maintains under `-DTRACKOBJECTS` (which test builds set automatically).
+- **Hex literals fold as signed bit patterns**, matching C: `0x80000000` is `-2147483648` as an `Int`, `0x80B` is `-128`, `0xFFFFS` is `-1`. Width-aware and suffix-aware (`B`/`S`/`I`/`L`); a literal too wide for its type is still an error rather than silently truncated.
+- **Methods can be called on constants** — `42.toString()` compiles. Identity conversions were deliberately NOT added: `someInt.toInt()` remains an error, and `as Int` stays the preferred (and faster) spelling.
+- New scenario tests for all of the above (`ObsoleteDirectiveTest`, `HexLiteralFoldTest`, `ConstantMethodCallTest`, `ParamReassignArcTest`); suite is now **129 tests**.
+
+### Fixed
+
+#### ARC / memory
+
+- **Reassigning a parameter leaked, and could use-after-free.** Assigning to a parameter promotes its slot from a caller-owned borrow to an owning local — the assignment codegen dec-olds and inc-news the slot — so without a matching entry retain and exit release the function both leaked the assigned value and over-released the caller's reference (a latent UAF, not yet observed in the wild). Now collected at bind time in `FunctionVariant.reassignedParams` (including `+=`) and bracketed by `renderFunction` / `renderCodeBlockCleanup`. `suspend` functions are excluded, as they already retain on entry. Locals were never affected.
+- **Loop-head temporaries leaked one wrapper per iteration.** Expressions in a `while` condition and similar loop heads re-execute with the temp's cleanup bound to the enclosing block, so the owned handle from the previous iteration was overwritten and lost. Property reads now pre-release before re-assigning (releasing NULL on the first pass is a no-op). This was the chunk-streaming leak.
+- **`inline fun` returning from inside a loop leaked every temp** inc'd in the enclosing blocks — for example the array temp of a subscript read inside a `while`. The inline result is now assigned and then unwound through the normal `__returning` / `goto __exit_<block>` cascade, so every enclosing block of the inlined body runs its cleanup decs. The inline body's root block absorbs `__returning`, so the caller's C function does not return; only the inlined block is exited.
+- **Exceptions thrown inside an inlined body are re-raised into the caller's block cascade**, taking the same unwind path a `throw` at the call site would, so enclosing `try`/`catch` blocks catch them and every caller block's cleanup decs run.
+
+#### Codegen
+
+- **`var x: T` with no initializer was dropped entirely.** Primitive locals are now zero-seed-declared; seeding before first use is no longer required.
+- **`n = null` on a nullable-primitive local (`Int?`) was rejected** — `OperatorExpressionValidator`'s null-to-primitive check ignored the `nullablePrimitive` flag.
+- **The wrong `main` could be selected.** When a root application depends on another `type: application` package (e.g. `am-git`), both expose `main` and the last one in iteration order won, silently running the wrong program. The root package's `main` is now preferred.
+
+#### Diagnostics
+
+- **Unresolved method calls name the function, not the receiver.** `0xD2800000.toInt()` reported `Can't inject as operator on expression without evaluating expression '0xD2800000'`; it now reports `Function 'toInt' not found on type 'Am.Lang.Int'`. `ExpressionBinder.triggerExpressionError` walks the sub-expression chain to find the call that failed to resolve.
+- Duplicate warnings are suppressed, and `ErrorLogger.getWarnings()` exposes a read-only view for tests.
+
 ## [0.11.0] - 2026-07-10
 
 ### Added

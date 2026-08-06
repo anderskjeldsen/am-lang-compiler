@@ -44,9 +44,9 @@ Download the latest native binary from [GitHub Releases](https://github.com/ande
 
 ### Manual Installation
 ```bash
-# Download and extract (example for Linux, current release is v0.11.0)
-wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.11.0.tar.gz
-tar -xzf amlc-linux-0.11.0.tar.gz
+# Download and extract (example for Linux, current release is v0.12.0)
+wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.12.0.tar.gz
+tar -xzf amlc-linux-0.12.0.tar.gz
 chmod +x amlc-linux
 
 # Verify installation
@@ -342,6 +342,31 @@ docker run -it -v $(pwd):/workspace amiga-gcc
 # Compile AmLang project for AmigaOS
 amlc build . -bt amigaos_docker
 ```
+
+## 🆕 What's New in v0.12.0
+
+### ⚡ Borrowed Parameter Convention
+- Object parameters and `this` are **no longer retained by the callee** — the call site already owns its arguments for longer than the call lasts. Saves two refcount ops per object argument per call, and two global-lock round trips under thread-safe ARC for a cross-thread receiver.
+- AmLang source needs no changes. **Native C that stashes an object pointer beyond the call must now retain it explicitly.**
+
+### 🚫 `#obsolete` Directive
+- Mark a function deprecated and warn at every call site: `#obsolete 'use readAll() instead'`. Covers instance, static and extension functions; warnings are de-duplicated.
+
+### 📦 `Am.Lang.BuildInfo`
+- The compiler synthesises a class mapping `id -> version` for every non-test package in the binary, backing `Am.Lang.Runtime.getPackages()`.
+
+### 🔢 C-style Hex Literals
+- A hex literal with the top bit set now folds to a negative number of the target type: `0x80000000` is `-2147483648` as an `Int`. Width- and suffix-aware.
+
+### 🧮 Methods on Constants
+- `42.toString()` compiles. Identity conversions are deliberately excluded — `as Int` stays the preferred, faster spelling.
+
+### 🐛 ARC Fixes
+- Reassigning a parameter leaked its value and **over-released the caller's reference** (a latent use-after-free); now bracketed correctly.
+- Loop-head temporaries leaked one wrapper per iteration (the chunk-streaming leak).
+- `inline fun` returning from inside a loop leaked every temp in the enclosing blocks; exceptions from an inlined body now unwind through the caller's block cascade.
+
+**Full release notes:** [release-notes/RELEASE_NOTES_v0.12.0.md](release-notes/RELEASE_NOTES_v0.12.0.md).
 
 ## 🆕 What's New in v0.11.0
 
