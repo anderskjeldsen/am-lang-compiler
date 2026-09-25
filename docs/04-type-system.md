@@ -48,7 +48,7 @@ var empty: String = ""
 ```
 
 String methods:
-- `getLength(): Int` - Returns string length
+- `length(): Int` - Returns string length
 - `print()` - Prints to stdout
 - `println()` - Prints with newline
 - `toString(): String` - Returns self (for consistency)
@@ -76,36 +76,20 @@ class Person : Object {
 
 All classes implicitly inherit from `Object` if no other base class is specified.
 
-## Nullable Types
+## Nullable types (v0.13.0)
 
-Am Lang supports nullable types for primitive types only to handle null references safely.
+Bare object and primitive types are non-null. Add `?` to allow null:
 
-### Nullable Declaration
-Add `?` after the primitive type name to make it nullable:
 ```amlang
-var maybeInt: Int? = 42
-var maybeBool: Bool? = null
-var maybeUShort: UShort? = null
+var title: String = "Ready"
+var optionalTitle: String? = null
+var count: Int? = null
+var displayTitle: String = optionalTitle ?? "Untitled"
 ```
 
-**Note**: Only primitive types (Int, Bool, UShort, Long, Double) can be nullable. Object types (String, User, Person, etc.) cannot be made nullable with the `?` operator.
+Safe calls (`?.`) skip the member access when the receiver is null. The `??` operator supplies a fallback, including after a safe-call chain. Nullable-to-non-null conversions may introduce runtime null checks; handle null explicitly when it is an expected value.
 
-### Null Safety
-The compiler enforces null checking for nullable primitive types:
-```amlang
-var count: Int? = getCount()
-
-// Compiler error - might be null
-count.toString()
-
-// Safe access with null check
-if (count != null) {
-    count.toString()  // OK - compiler knows it's not null
-}
-
-// Safe call operator
-count?.toString()  // Only calls if not null
-```
+`legacyObjectNullability` in `compilerFlags` and `#legacyObjectNullability` are rejected. Remove them from the root package and dependencies when migrating. See the [upgrade guide](../README.md#upgrading-to-v0130).
 
 ## Type Inference
 

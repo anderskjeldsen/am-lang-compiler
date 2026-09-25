@@ -1,197 +1,160 @@
 # AmLang Compiler
 
-> **Fast, modern object-oriented programming language that compiles to C**  
-> Perfect for cross-platform development, embedded systems, and high-performance applications
+AmLang is a statically typed, object-oriented language that compiles to C and then to a native executable using your target's C toolchain. It combines classes, generics, structs, automatic reference counting, suspend functions, and built-in tests with native C integration.
 
 [![GitHub Release](https://img.shields.io/github/v/release/anderskjeldsen/am-lang-compiler)](https://github.com/anderskjeldsen/am-lang-compiler/releases)
-[![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Java%2021-blue)](#platform)
-[![Targets](https://img.shields.io/badge/targets-AmigaOS%203.x%20%7C%20MorphOS%20%7C%20Linux%20%7C%20MacOS-blue)](#targets)
-[![Performance](https://img.shields.io/badge/performance-benchmarks-green)](#performance)
 
-## 🚀 Why Choose AmLang?
+This repository contains public documentation, examples, installation tools, and compiler releases. This README describes **v0.13.0**. Start with the [release notes](release-notes/RELEASE_NOTES_v0.13.0.md) and [upgrade steps](#upgrading-to-v0130) if you already use AmLang.
 
-**AmLang** is designed for developers who want the **productivity of modern languages** with the **performance and portability of C**. Whether you're building embedded applications, cross-platform tools, or high-performance systems, AmLang gives you:
+## What's new in v0.13.0
 
-### 🎯 **Modern Language Features**
-- **Object-oriented programming** with classes, inheritance, and interfaces
-- **Built-in unit testing** with comprehensive mocking framework
-- **Memory management** with automatic reference counting
-- **Concurrency support** with built-in threading
-- **Clean syntax** inspired by Kotlin and C#
+- **Smaller generated programs:** compatible generic object variants share method implementations while preserving concrete runtime type identities. Packed exception metadata and static dispatch tables reduce generated code and startup work.
+- **Throws optimization enabled by default:** eligible non-throwing functions use direct C return types and omit unnecessary exception checks. `#noThrow` declares a contract; `#nativeEntry` preserves entry points called by native code.
+- **Opt-in tree-shaking:** `-ftree-shake` or build-target `treeShake: true` removes unreachable classes. Keep directives cover native and dynamically reached classes.
+- **More stable incremental builds:** string constants use content-based symbols and per-unit declarations instead of a shared header.
+- **Language fixes and additions:** null-coalescing `??`, qualified class paths, unnamed function-type parameters, zero-argument lambda arguments, and working object compound assignment.
+- **Build improvements:** `ccCommand`, target toolchain overrides, inherited-flag removal, Docker architecture selection, platform C defines, and shallow Git dependency clones.
 
-### 🌍 **Universal Compatibility**
-- **Compile anywhere, run everywhere** - generates portable C code
-- **Cross-platform builds** for Linux, macOS, AmigaOS, Morphos and more.
-- **Native C interop** for seamless library integration
+See the [full changelog](CHANGELOG.md) for fixes to suspend cleanup, ARC, generic arrays, interface dispatch, and cross-platform builds.
 
+## Installation
 
-<a id="platform"></a>
-## 📦 Quick Installation
+### Automatic installation
 
-### One-Line Install (Recommended)
+On a system with Bash and curl:
+
 ```bash
-# Auto-detects best version for your system
 curl -fsSL https://raw.githubusercontent.com/anderskjeldsen/am-lang-compiler/master/scripts/install-amlc.sh | bash
+amlc --version
 ```
 
-### Platform-Specific Downloads
-Download the latest native binary from [GitHub Releases](https://github.com/anderskjeldsen/am-lang-compiler/releases):
+The installer chooses a native compiler when available and otherwise uses the JAR distribution. To select the JAR explicitly:
 
-- **Linux x64**: `amlc-linux-[version].tar.gz`
-- **macOS x64**: `amlc-mac-[version].tar.gz` 
-- **macOS ARM64**: `amlc-mac-arm64-[version].tar.gz`
-- **Universal JAR**: `amlc-[version].jar` (requires Java 21+)
-
-### Manual Installation
 ```bash
-# Download and extract (example for Linux, current release is v0.12.0)
-wget https://github.com/anderskjeldsen/am-lang-compiler/releases/latest/download/amlc-linux-0.12.0.tar.gz
-tar -xzf amlc-linux-0.12.0.tar.gz
-chmod +x amlc-linux
+curl -fsSL https://raw.githubusercontent.com/anderskjeldsen/am-lang-compiler/master/scripts/install-amlc.sh | bash -s -- --type jar
+```
 
-# Verify installation
+The JAR requires **Java 21 or newer**. Native compiler executables do not require Java. Building an AmLang application still requires **make, a C compiler, and the headers/libraries for its target**.
+
+### Manual downloads
+
+Download from [GitHub Releases](https://github.com/anderskjeldsen/am-lang-compiler/releases). The release workflow builds these distributions; the assets attached to a release show which builds completed:
+
+| Compiler host | Archive | Launcher/executable |
+|---|---|---|
+| Linux x64 | `amlc-linux-x64-0.13.0.tar.gz` | `amlc-linux` |
+| macOS ARM64 | `amlc-macos-arm64-0.13.0.tar.gz` | `amlc-mac-arm64` |
+| Windows x64 | `amlc-windows-x64-0.13.0.zip` | `amlc-windows.exe` |
+| Any supported Java 21+ host | `amlc-jar-0.13.0.tar.gz` or `.zip` | `amlc.sh`, `amlc.bat`, or `java -jar amlc-0.13.0.jar` |
+
+For example, on Linux x64:
+
+```bash
+curl -fLO https://github.com/anderskjeldsen/am-lang-compiler/releases/download/v0.13.0/amlc-linux-x64-0.13.0.tar.gz
+tar -xzf amlc-linux-x64-0.13.0.tar.gz
+chmod +x amlc-linux
 ./amlc-linux --version
 ```
 
-## 🏃‍♂️ Getting Started
+Rename/install the executable as `amlc` on your `PATH` to use the commands below. On hosts without a native asset, including macOS Intel and Linux ARM64, use the JAR.
 
-### 1. Write Your First Program
-Create `hello.aml`:
+## Getting started
+
+Create a project and answer the project-name and root-namespace prompts:
+
+```bash
+amlc new my-project
+cd my-project
+```
+
+The scaffold contains `package.yml`, a Makefile, and a `.aml` program under `src/am-lang/<namespace>/Program.aml`. Replace the generated program with this example, keeping one entry point:
+
 ```amlang
 namespace HelloWorld {
     class Program {
-        fun main() {
+        import Am.Lang
+
+        static fun main() {
             "Hello, AmLang!".println()
         }
     }
 }
 ```
 
-### 2. Create Project Structure
+The scaffold defines a Linux x64 target. On Linux with GCC and make installed:
+
 ```bash
-mkdir my-project && cd my-project
-amlc new                    # Creates package.yml and src/ directory
+amlc build . -bt linux-x64
+amlc run . -bt linux-x64
 ```
 
-### 3. Compile and Run
-```bash
-amlc build                   # Compiles to C and builds executable
-amlc run                     # Builds and runs your program
-```
+Both commands require a project path (`.` here). `-bt` selects an ID from that project's `buildTargets`; it is not a globally predefined target. Add a matching platform and build target for other systems, as in the configuration below.
 
-## 🎯 Real-World Examples
+Production output goes to `builds/`, with the executable at `builds/bin/<platform>/app`. Tests use a separate `test-builds/` tree.
 
-### Cross-Platform Graphics with Feature Toggles (v0.7.0)
+## Language features
+
+| Area | Features |
+|---|---|
+| Types | Signed/unsigned integers, floating-point types, strings, nullable objects and primitives, generics, enums, and structs |
+| Objects | Classes, single class inheritance, interfaces with multiple parents, virtual methods, constructors, and `init` blocks |
+| Functions | Lambdas, function types, extension functions, inline functions, and suspend functions |
+| Expressions | Type inference, string interpolation, safe calls `?.`, null fallback `??`, casts `as`, and type tests `is` |
+| Control flow | Conditions, loops including `each`, switch statements, exceptions, and `try`/`catch`/`finally` |
+| Memory | Automatic reference counting, borrowed parameters, allocation-failure exceptions, and optional object/ARC diagnostics |
+| Integration | Native classes/functions, inline C, platform-specific native implementations, and feature-controlled declarations |
+| Tooling | Unit tests, scoped mocks, linting, API documentation, and configurable local/container/remote builds |
+
+Imports belong inside the class body. The following complete program demonstrates generics, lambdas, and null handling:
+
 ```amlang
-namespace Graphics {
-    #require opengl
-    class Renderer {
-        fun initialize() {
-            OpenGL.initContext()
-        }
-    }
-    
-    #require directx
-    class Renderer {
-        fun initialize() {
-            DirectX.createDevice()
-        }
-    }
-}
+namespace Examples {
+    class Program {
+        import Am.Lang
+        import Am.Collections
 
-// package.yml configures which features to use
-// dependencies:
-//   - id: graphics-lib
-//     features: [opengl]  # Use OpenGL on Linux/macOS
-```
-
-### Scientific Computing with Float/Double (v0.7.0)
-```amlang
-namespace Physics {
-    class Particle {
-        private var mass: Double = 9.109e-31     // Electron mass (kg)
-        private var charge: Double = -1.602e-19  // Elementary charge (C)
-        
-        fun kineticEnergy(velocity: Float): Double {
-            var v = velocity.toDouble()
-            return 0.5 * mass * v * v
-        }
-    }
-}
-```
-
-### Cross-Platform GUI Application
-```amlang
-namespace MyApp {
-    import Am.Lang
-    import Am.Ui
-    
-    class MainWindow {
         static fun main() {
-            var w = Window.openWindow(20S, 20S, 300US, 200US, null, null)
-            
-            var panel = new Panel()
-            panel.setDefaultBorder()
-            panel.setDefaultPadding()
-            panel.setMargin(w.getScaledX(2S), w.getScaledY(2S))
-
-            var vStack = new VStack(w.getScaledY(2S))
-            panel.setChild(vStack)
-
-            var button = new Button("Click Me!", (v) => {
-                "Button clicked!".println()
-                return true
-            })
-
-            button.setup((v) => {
-                v.setDefaultPadding()
-                v.growX = 255UB
-                v.growY = 0UB
-            })
-
-            vStack.addChild(button)
-            w.setRootView(panel)
-
-            w.layout()
-            w.requestRepaint()
-
-            while(w.isOpen()) {
-                w.handleInput()
+            var names = new List<String>()
+            names.add("Ada")
+            names.add("Linus")
+            each(name in names) {
+                "Hello, $name".println()
             }
+
+            var title: String? = null
+            var displayTitle: String = title ?? "Untitled"
+            displayTitle.println()
+
+            var isPositive: (Int) => Bool = (value) => {
+                return value > 0
+            }
+            isPositive(3).toString().println()
         }
     }
 }
 ```
 
-### Unit Testing with Mocks
-```amlang
-// tests/DatabaseTest.aml
-namespace MyApp.Tests {
-    class DatabaseTest {
-        test testUserRepository() {
-            mock Database {
-                fun findUser(id: Int): User {
-                    return new User(id, "Test User")
-                }
-            }
-            
-            var repo = new UserRepository()
-            var user = repo.getUser(123)
-            
-            if (user.name != "Test User") {
-                throw new Exception("Mock failed!")
-            }
-        }
-    }
-}
-```
+Bare types such as `String` are non-null. Use `String?` or `Int?` when a value may be null. Nullable-to-non-null conversions can insert runtime checks; use `?.` and `??` to handle null explicitly.
 
-## 🛠️ Build System
+Struct equality compares fields recursively. Struct copy/reference behavior depends on the operation; do not assume every assignment and argument has the same semantics as an object reference.
 
-### Project Configuration (`package.yml`)
+Threading and suspend support come from the compiler and `am-lang-core` runtime. **v0.13.0 uses the existing cross-thread ARC runtime**; isolate threads, `fast` arena blocks, and the `#reflect` closure from the development worktree are not part of this release. Reflection in v0.13.0 uses `--reflection`.
+
+### Directives and runtime information
+
+- `#obsolete` marks deprecated functions and can include a replacement hint.
+- `#runOnStartup` and `#runOnExit` register lifecycle hooks with optional integer priorities; `#onNativeTearDown` runs native cleanup after runtime teardown.
+- `#implementationPlatforms` selects the platform-specific native implementations for a native class.
+- `Am.Lang.Runtime.getPlatform()` reports the build platform, and `Runtime.getPackages()` uses compiler-generated `Am.Lang.BuildInfo` to report non-test package versions.
+- `instances(SomeClass)` reads live-instance counts when object tracking is enabled, including in test builds.
+
+## Project and build configuration
+
+A minimal project with Linux and Apple Silicon targets:
+
 ```yaml
-id: my-awesome-app
-version: 1.0
+id: my-app
+version: 1.0.0
 type: application
 dependencies:
   - id: am-lang-core
@@ -199,290 +162,141 @@ dependencies:
     type: git-repo
     tag: latest
     url: https://github.com/anderskjeldsen/am-lang-core.git
-  - id: am-ui
-    realm: github
-    type: git-repo
-    tag: latest
-    url: https://github.com/anderskjeldsen/am-ui.git
 platforms:
   - id: libc
     abstract: true
   - id: linux-x64
     extends: libc
-    gccCommand: gcc
-  - id: amigaos
+    ccCommand: gcc -O2
+  - id: macos-arm
     extends: libc
-    gccCommand: m68k-amigaos-gcc
+    ccCommand: clang -O2
 buildTargets:
   - id: linux-x64
     platform: linux-x64
-  - id: amigaos
+  - id: macos-arm
+    platform: macos-arm
+```
+
+For Apple Silicon, run `amlc build . -bt macos-arm`. Use a compatible `am-lang-core` revision; for reproducible builds, replace `latest` with an existing tag or revision supported by your dependency setup.
+
+Dependencies can also use `type: local` with `path: ../my-library` for local development. `-lpp /path/to/packages` checks `<directory>/<package-id>/` before the declared dependency location. `-pof overrides.yml` supplies dependency overrides.
+
+### Build options
+
+- **Compiler commands:** `ccCommand` takes precedence over the compatible older spelling `gccCommand`. Build targets can override C compiler and assembler commands. `gccAdditionalOptions` and `additionalLinkerFlags` add flags; platform `gccRemoveOptions` and `linkerRemoveFlags` remove inherited flags.
+- **Feature selection:** packages declare features, dependencies/build targets select them, and `#require` controls declarations. A feature declared `global: true` can be referenced with the `!` prefix. Enable the core's `floatingPoint` feature when using its floating-point facilities.
+- **Tree-shaking:** add `treeShake: true` to a selected build target or pass `-ftree-shake`. To inspect candidates without pruning, use `-ftree-shake-report` with tree-shaking otherwise disabled. `#compileAlways` retains a class; `#compileAllImplementations` also retains subclasses and interface implementations.
+- **Throws optimization:** enabled by default for eligible production code; use `-fno-throws-opt` to disable it. Test builds keep exception checks and the uniform calling convention so mocks can throw.
+- **Slot borrowing:** `-fborrow-slot-reads` is opt-in in this release. It removes retains/releases for narrowly proven immediate primitive-array accesses through `this`.
+- **Single-threaded runtime:** root-package `compilerFlags: [singleThreaded]` emits `AM_SINGLE_THREADED=1`. Use it only for programs that do not start threads, and rebuild all objects when changing it.
+
+Native C receives `PLATFORM_<ID>` defines for the selected platform and its ancestors. Clean object output when changing compiler commands or ABI-affecting settings; switching targets that override the same platform does not automatically invalidate those objects.
+
+### Docker and SSH builds
+
+A target can use a container for C compilation:
+
+```yaml
+buildTargets:
+  - id: amigaos-docker
     platform: amigaos
+    dockerBuild:
+      image: amiga-gcc:latest
+      buildPath: /work
 ```
 
-### Common Commands
+This requires an `amigaos` platform declaration, compatible native dependencies, and the toolchain image. See the included [Amiga GCC Docker files](docker/amiga-gcc/). Set `dockerBuild.platform`, for example `linux/amd64`, when the image requires a particular container architecture.
+
+`sshBuild` supports SSH/rsync builds on a remote host. `dockerTest` can run cross-compiled tests in a container; AmigaOS emulation also needs an appropriately configured emulator image and ROM. These tools must be configured separately from installing the compiler.
+
+## Commands
+
+Run these from a project containing the referenced build target:
+
 ```bash
-amlc new                    # Initialize new project
-amlc build                   # Build project 
-amlc run                     # Build and run
-amlc test                    # Run unit tests
-amlc lint                    # Check code style (v0.7.0)
-amlc docs                    # Generate API documentation (v0.7.0)
-amlc clean                   # Clean build artifacts
-amlc                       # Show help when no valid command given
+amlc --help
+amlc --version
+amlc new my-project
+amlc deps .
+amlc build . -bt linux-x64
+amlc run . -bt linux-x64
+amlc test . -bt linux-x64
+amlc test . -bt linux-x64 -tests "CalculatorTest testAddition"
+amlc lint .
+amlc docs . -docformat both -docout api-docs
+amlc clean . -bt linux-x64
 ```
 
-## 🧪 Testing Framework
+`clean` removes production object files for the selected target; it is not a full cleanup of generated C and test output. See [compiler usage](docs/16-compiler-usage.md) for options and paths.
 
-AmLang includes a **comprehensive built-in testing framework**:
+## Unit tests and mocks
 
-### Basic Testing
+Put test classes in `tests/` and add `am-tests` as a dependency with `testOnly: true`. Tests use the `test` keyword, and a thrown exception marks a failure. For example, with a `Calculator.add` method in namespace `Example`:
+
 ```amlang
-class CalculatorTest {
-    test testAddition() {
-        var calc = new Calculator()
-        var result = calc.add(5, 3)
-        
-        if (result != 8) {
-            throw new Exception("Addition failed!")
-        }
-    }
-}
-```
+namespace ExampleTests {
+    class CalculatorTest {
+        import Am.Lang
+        import Example
 
-### Advanced Mocking
-```amlang
-class ServiceTest {
-    test testWithComplexMock() {
-        mock Database {
-            fun query(sql: String): ResultSet {
-                // Mock implementation
-                return mockResultSet()
+        test testAddition() {
+            var calculator = new Calculator()
+            if (calculator.add(5, 3) != 8) {
+                throw new Exception("Expected 8")
             }
         }
-        
-        scope {
-            mock Logger {
-                fun log(message: String) {
-                    // Override logging in this scope
+
+        test testMock() {
+            mock Calculator {
+                fun add(a: Int, b: Int): Int {
+                    return 100
                 }
             }
-            
-            // Test code with both mocks active
+            var calculator = new Calculator()
+            if (calculator.add(5, 3) != 100) {
+                throw new Exception("Expected mocked result")
+            }
         }
-        // Logger mock automatically restored here
     }
 }
 ```
 
-<a id="performance"></a>
-## ⚡ Performance
+Mocks are scoped; nested `scope` blocks support temporary overrides. See the [unit-testing example](examples/unit-testing/) for calculator sources and additional mock scenarios. Test executables are written to `test-builds/test-bin/<platform>/test_app`, with makefiles at `test-builds/<platform>.makefile`.
 
-Performance benchmark summary from `examples/performance_test/ReadMe.md`.
+## Platforms
 
-Workload used for all runs:
-- Iterations: `1000`
-- Count per iteration: `100000`
-- Modulo: `7` (skip when `i % modulo == 0`)
-- Total points processed: `100000000`
+The **compiler host** and the **generated program's target** are separate choices. A compiler running on macOS can generate code for AmigaOS when the target toolchain and native libraries are available.
 
-| Language | `handlePoints` (array) | `handlePoints2` (no array) |
-|---|---:|---:|
-| Rust (`rustc -C opt-level=2`) | 476 ms | 331 ms |
-| C (pure, gcc -O3) | 986 ms | 846 ms |
-| AmLang | 986 ms | 819 ms |
-| Go | 1290 ms | 867 ms |
-| Java | 1632 ms | 881 ms |
-| C# (`struct Point`) | 1946 ms | 826 ms |
-| Python | 52151 ms | 34041 ms |
+| Target family | Platform IDs in the current core configuration |
+|---|---|
+| Linux | `linux-x64`, `linux-arm64v8`, `linux-ppc32`, `linux-ppc64` |
+| macOS | `macos` (Intel), `macos-arm` (Apple Silicon) |
+| AmigaOS 3.x | `amigaos` (m68k) |
+| MorphOS | `morphos-ppc` |
+| AROS | `aros-x86-64`, `aros-arm64`, `aros-m68k` |
 
-<sub>These results were measured on a Dell XPS 15 (2018) with an Intel Core i7 CPU, NVIDIA GTX 1050-class GPU, 32 GB RAM, and 1 TB SSD.</sub>
+Target availability depends on your package configuration, C toolchain, and native dependencies. A Windows-hosted compiler is distributed, but the new Windows x64 **core runtime target** remains separate development work and is not included in this v0.13.0 core branch. Generated executables may require platform libraries; native compilation does not imply a fully static executable.
 
-Notes:
-- `handlePoints`: create all points in an array, then sum in a second pass.
-- `handlePoints2`: create point and sum immediately (no array).
-- The modulo branch (`i % modulo == 0`) is intentional: it helps prevent trivial constant-folding/dead-code style optimizations so compilers still emit realistic machine code for the loop workload.
-- Full benchmark details: `examples/performance_test/ReadMe.md`.
+## Performance
 
-<a id="targets"></a>
-## 📊 Platform Support
+The [benchmark example](examples/performance_test/ReadMe.md) compares array and non-array point-processing workloads across several languages. Its recorded timings are historical measurements for that workload and machine, not a v0.13.0 benchmark or a general performance ranking.
 
-### Native Compilation Targets
-- ✅ **Linux (x64, ARM64, PowerPC)** - Full support with native binaries
-- ✅ **macOS (x64, ARM64)** - Intel and Apple Silicon support
-- ✅ **AmigaOS 3.x** - Classic Amiga cross-compilation
-- ✅ **MorphOS** - Modern Amiga-compatible systems
+v0.13.0 focuses on generated-code size, exception-call overhead, ARC overhead, and incremental rebuilds. Measure your application with its intended C compiler, optimization flags, and target hardware.
 
-### Runtime Requirements
-- **Native binaries**: No runtime dependencies
-- **JAR version**: Java 21+ required
+## Upgrading to v0.13.0
 
-## 🐳 Docker Setup for AmigaOS Cross-Compilation
+1. Remove `legacyObjectNullability` from every package's `compilerFlags` and remove `#legacyObjectNullability` directives. Both are rejected. Audit nullable objects and add explicit `?` types.
+2. Rebuild generated C and native objects with a compatible `am-lang-core`. Packed exception helpers, suspend rendezvous support, and calling conventions must match. Add `#nativeEntry` to AmLang declarations whose uniform entry points are called directly from native code.
+3. Update scripts to use `test-builds/<platform>.makefile` and `test-builds/test-bin/<platform>/test_app`. Generated units no longer use the shared `string_constants.h` header.
+4. Before enabling tree-shaking, mark classes reachable only through native code, reflection, or dynamic registration with keep directives.
 
-For AmigaOS development, AmLang provides a complete Docker-based cross-compilation environment with the Amiga GCC toolchain and AmiSSL support:
+Native functions that retain object arguments beyond a call must explicitly acquire ownership, following the borrowed-parameter convention introduced in v0.12.0. See the [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md) for details and known limitations.
 
-### Quick Setup
-```bash
-# From the project root
-cd docker/amiga-gcc
-./build.sh
+## Documentation and examples
 
-# Or alternatively, build directly from project root:
-docker build -f docker/amiga-gcc/Dockerfile -t amiga-gcc .
-```
+- [Documentation index](docs/README.md), [getting started](docs/18-getting-started.md), and [compiler usage](docs/16-compiler-usage.md)
+- [Hello world](examples/hello-world/), [loop syntax](examples/loop-keyword-demo/), [file browser](examples/file-browser/), and [unit tests](examples/unit-testing/)
+- [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md), [v0.12.0 release notes](release-notes/RELEASE_NOTES_v0.12.0.md), and [release history](CHANGELOG.md)
 
-### Using the Docker Environment
-```bash
-# Interactive development environment
-docker run -it amiga-gcc
-
-# Mount your project for cross-compilation
-docker run -it -v $(pwd):/workspace amiga-gcc
-
-# Compile AmLang project for AmigaOS
-amlc build . -bt amigaos_docker
-```
-
-## 🆕 What's New in v0.12.0
-
-### ⚡ Borrowed Parameter Convention
-- Object parameters and `this` are **no longer retained by the callee** — the call site already owns its arguments for longer than the call lasts. Saves two refcount ops per object argument per call, and two global-lock round trips under thread-safe ARC for a cross-thread receiver.
-- AmLang source needs no changes. **Native C that stashes an object pointer beyond the call must now retain it explicitly.**
-
-### 🚫 `#obsolete` Directive
-- Mark a function deprecated and warn at every call site: `#obsolete 'use readAll() instead'`. Covers instance, static and extension functions; warnings are de-duplicated.
-
-### 📦 `Am.Lang.BuildInfo`
-- The compiler synthesises a class mapping `id -> version` for every non-test package in the binary, backing `Am.Lang.Runtime.getPackages()`.
-
-### 🔢 C-style Hex Literals
-- A hex literal with the top bit set now folds to a negative number of the target type: `0x80000000` is `-2147483648` as an `Int`. Width- and suffix-aware.
-
-### 🧮 Methods on Constants
-- `42.toString()` compiles. Identity conversions are deliberately excluded — `as Int` stays the preferred, faster spelling.
-
-### 🐛 ARC Fixes
-- Reassigning a parameter leaked its value and **over-released the caller's reference** (a latent use-after-free); now bracketed correctly.
-- Loop-head temporaries leaked one wrapper per iteration (the chunk-streaming leak).
-- `inline fun` returning from inside a loop leaked every temp in the enclosing blocks; exceptions from an inlined body now unwind through the caller's block cascade.
-
-**Full release notes:** [release-notes/RELEASE_NOTES_v0.12.0.md](release-notes/RELEASE_NOTES_v0.12.0.md).
-
-## 🆕 What's New in v0.11.0
-
-### 🎯 Draft Nullability Syntax
-- Bare `T` is now **nullable by default**; `T!` marks a type non-null. Assigning a nullable to a non-null slot inserts an implicit `!!` conversion.
-- Opt back into pre-0.11.0 behavior with `legacyObjectNullability` in `package.yml`'s `compilerFlags`, or per class with `#legacyObjectNullability` for a gradual file-by-file migration.
-
-### 🧵 Thread-Safe ARC
-- Cross-thread reference counting via **wrapper aobjects**. Reads and writes from a foreign thread transparently redirect via `__unwrap()` — near-free when no wrappers exist (~one load + branch total).
-- AmLang source needs no changes. Hand-written native C in your package must `__unwrap()` before any data deref of an aobject that might have crossed threads.
-
-### 🛑 OutOfMemoryException
-- `new` codegen null-checks the allocation and throws a preallocated `Am.Lang.OutOfMemoryException` singleton on failure — catchable with an ordinary `try` / `catch`. Before v0.11.0, allocation failure meant a SIGSEGV in the constructor call.
-
-### 🔗 Interface Improvements
-- Implicit `SubIface → SuperIface` conversion when the source transitively extends the target — drops the "declare every super-iface on the class" workaround.
-- **Multi-parent interfaces** (`interface X : A, B`) resolve inherited functions at call sites.
-- `is SomeInterface` finally works (previously always returned `false`).
-
-### 🐳 `buildTargets[].dockerTest`
-- Cross-compile in one container, run tests in another. Landed with the workspace's `amlang-amiberry:latest` image so AmigaOS m68k tests run end-to-end under Amiberry — no local AmigaOS install needed.
-
-### 🏗️ `buildTargets[].sshBuild`
-- SSH + rsync analog of `dockerBuild`. Cross-compile on a remote host, pull the binaries back.
-
-### 🧹 Lifecycle Hook Priorities
-- `#runOnExit`, `#runOnStartup`, and the new `#onNativeTearDown` accept an optional integer priority: `#runOnExit(1000)`. Hooks fire in ascending order across all classes.
-
-**Full release notes:** [release-notes/RELEASE_NOTES_v0.11.0.md](release-notes/RELEASE_NOTES_v0.11.0.md).
-
-## 🆕 What's New in v0.10.0
-
-### 🚀 `inline` Functions
-- New `inline` modifier expands calls at the C call site — zero-overhead abstractions and full GCC constant-folding through the expansion.
-
-### 🖥️ `#implementationPlatforms` Directive
-- Declares which platforms need their own per-platform native stub. Lets one native class share a `libc` implementation across linux/macos while providing custom AmigaOS/MorphOS implementations side-by-side.
-
-### 🧬 `init { }` Blocks
-- Runs as part of object construction, after the primary constructor and body-declared property defaults. Composes through inheritance — each class's `init` runs in base-to-derived order.
-
-### 🧱 Struct Equality
-- `==` / `!=` on struct values compare fields recursively instead of pointer identity. Nested structs handled correctly.
-
-**Full release notes:** [release-notes/RELEASE_NOTES_v0.10.0.md](release-notes/RELEASE_NOTES_v0.10.0.md).
-
-## 🆕 What's New in v0.9.0
-
-### 🧱 Struct Support Improvements
-- Struct declarations and initialization have been improved.
-- Nested structs are better supported in everyday usage.
-- Better struct-related diagnostics and validation behavior.
-
-### 📌 Struct Semantics
-- Struct variables are handled as struct pointers at runtime.
-- Passing a struct to a function passes the pointer (shared struct data).
-- Returning a struct creates a copy.
-- Storing a struct in an array creates a copy of the struct value.
-- Reading a struct from an array currently depends on usage.
-- Direct element member access (for example `arr[i].x`) works on the array element reference.
-- Assigning an element to a struct variable (for example `var p = arr[i]`) creates a copy.
-- Planned for v0.10.0: make copy-vs-reference explicit for struct reads (for example use `*arr[i]` for copy), and report compile errors when a reference/value mismatch is ambiguous.
-
-### 🏷️ Struct Initializer Named Fields and Type Stability
-- Struct initializer named fields are more reliable and better validated.
-- Type-handling improvements reduce edge-case compile failures.
-- Better behavior in complex call/type scenarios.
-
-### 🔧 Correctness and Tooling Improvements
-- Fixes across overload resolution, expression ordering, static call correctness, and array modification behavior.
-- Improved primitive-vs-`null` handling and `return`-statement edge cases.
-- Improved release workflow and publish diagnostics.
-
-## 🆕 What's New in v0.8.0
-
-### 🔁 Enhanced `each` Loop Syntax
-- Added intuitive iteration syntax: `each(item in collection) { ... }`.
-- Existing syntax `each(collection, item)` remains fully supported.
-
-### 🎯 Function Pointer Property Improvements
-- Improved direct invocation of function-pointer properties (for example: `this.callback()`).
-- Improved C code generation reliability and diagnostics for function-pointer usage.
-- Improved memory handling and type validation for callback-style patterns.
-
-### λ Anonymous Function Property Invocation
-- Improved direct invocation of anonymous functions stored in properties.
-- Improved behavior for patterns like `this.operation(a, b)`.
-
-## 🆕 What's New in v0.7.0
-
-- Feature toggles with `#require` directives for cross-platform development.
-- Float/Double support with scientific notation (for example `1.23e-4F`).
-- Built-in linting via `amlc lint`.
-- API documentation generation via `amlc docs`.
-
-## 🆕 What's New in v0.6.4
-
-### 🧪 **Complete Mocking Framework**
-- `mock` keyword for overriding class behavior in tests
-- `scope` management for nested mocks with automatic cleanup
-- Full integration with existing unit testing framework
-
-## 📚 Learn More
-
-### Examples
-Explore real-world projects in the [`examples/`](examples/) directory:
-- **Hello World** - Basic program structure
-- **File Browser** - GUI application with native file access
-- **Image Browser** - Graphics and image processing
-- **Unit Testing** - Comprehensive testing examples with mocks
-
-### Official Frameworks
-- **[am-json](https://github.com/anderskjeldsen/am-json)** - Comprehensive JSON parsing and serialization library
-- **[am-net](https://github.com/anderskjeldsen/am-net)** - Networking utilities and protocols
-- **[am-ssl](https://github.com/anderskjeldsen/am-ssl)** - SSL/TLS security library
-- **[am-fipm](https://github.com/anderskjeldsen/am-fipm)** - Fixed-point mathematics library
-- **[am-ui](https://github.com/anderskjeldsen/am-ui)** - GUI framework for AmLang
-- **[am-imaging](https://github.com/anderskjeldsen/am-imaging)** - Image processing library
-- **[am-png](https://github.com/anderskjeldsen/am-png)** - PNG format support
+Libraries include [am-lang-core](https://github.com/anderskjeldsen/am-lang-core), [am-json](https://github.com/anderskjeldsen/am-json), [am-net](https://github.com/anderskjeldsen/am-net), [am-ssl](https://github.com/anderskjeldsen/am-ssl), [am-ui](https://github.com/anderskjeldsen/am-ui), and [am-imaging](https://github.com/anderskjeldsen/am-imaging). Check each library's platform support and compiler compatibility when adding it to a project.

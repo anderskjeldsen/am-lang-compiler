@@ -10,12 +10,12 @@ A typical Am Lang project follows this structure:
 my-project/
 ├── package.yml          # Project configuration file
 ├── src/                 # Source code directory
-│   ├── main.as         # Main program file
+│   ├── main.aml         # Main program file
 │   ├── models/         # Model classes (optional)
-│   │   ├── User.as
-│   │   └── Product.as
+│   │   ├── User.aml
+│   │   └── Product.aml
 │   └── utils/          # Utility classes (optional)
-│       └── StringUtils.as
+│       └── StringUtils.aml
 ├── builds/             # Generated build artifacts (auto-created)
 │   ├── native/         # Native build output
 │   │   ├── main        # Compiled executable
@@ -148,7 +148,7 @@ For simple projects, a single source file is sufficient:
 simple-project/
 ├── package.yml
 └── src/
-    └── main.as
+    └── main.aml
 ```
 
 ### Multi-File Projects
@@ -159,26 +159,26 @@ Larger projects should organize code into logical modules:
 large-project/
 ├── package.yml
 └── src/
-    ├── main.as              # Entry point
+    ├── main.aml              # Entry point
     ├── core/                # Core functionality
-    │   ├── Application.as
-    │   ├── Config.as
-    │   └── Logger.as
+    │   ├── Application.aml
+    │   ├── Config.aml
+    │   └── Logger.aml
     ├── models/              # Data models
-    │   ├── User.as
-    │   ├── Product.as
-    │   └── Order.as
+    │   ├── User.aml
+    │   ├── Product.aml
+    │   └── Order.aml
     ├── services/            # Business logic
-    │   ├── UserService.as
-    │   ├── ProductService.as
-    │   └── OrderService.as
+    │   ├── UserService.aml
+    │   ├── ProductService.aml
+    │   └── OrderService.aml
     ├── utils/               # Utility classes
-    │   ├── StringUtils.as
-    │   ├── DateUtils.as
-    │   └── MathUtils.as
+    │   ├── StringUtils.aml
+    │   ├── DateUtils.aml
+    │   └── MathUtils.aml
     └── native/              # Native code interfaces
-        ├── FileSystem.as
-        └── Network.as
+        ├── FileSystem.aml
+        └── Network.aml
 ```
 
 ### Namespace Organization
@@ -186,14 +186,14 @@ large-project/
 Organize code using namespaces that reflect the directory structure:
 
 ```amlang
-// src/models/User.as
+// src/models/User.aml
 namespace MyProject.Models {
     class User {
         // Implementation
     }
 }
 
-// src/services/UserService.as
+// src/services/UserService.aml
 namespace MyProject.Services {
     import MyProject.Models.User
     
@@ -202,7 +202,7 @@ namespace MyProject.Services {
     }
 }
 
-// src/main.as
+// src/main.aml
 namespace MyProject {
     import MyProject.Services.UserService
     
@@ -348,8 +348,8 @@ Example script (`scripts/generate-version.sh`):
 #!/bin/bash
 # Generate version information
 echo "Generating version file..."
-echo "const var BUILD_VERSION = \"$(git describe --tags)\"" > src/Version.as
-echo "const var BUILD_DATE = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> src/Version.as
+echo "const var BUILD_VERSION = \"$(git describe --tags)\"" > src/Version.aml
+echo "const var BUILD_DATE = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> src/Version.aml
 ```
 
 ### Testing Scripts
@@ -378,15 +378,15 @@ Organize platform-specific code:
 cross-platform-project/
 ├── package.yml
 ├── src/
-│   ├── main.as
+│   ├── main.aml
 │   ├── common/           # Platform-independent code
-│   │   └── Utils.as
+│   │   └── Utils.aml
 │   ├── linux/           # Linux-specific code
-│   │   └── FileSystem.as
+│   │   └── FileSystem.aml
 │   ├── windows/         # Windows-specific code
-│   │   └── FileSystem.as
+│   │   └── FileSystem.aml
 │   └── amiga/           # Amiga-specific code
-│       └── FileSystem.as
+│       └── FileSystem.aml
 ```
 
 ### Conditional Compilation
@@ -497,7 +497,7 @@ dependencies: []
 ```
 
 ```amlang
-// src/main.as
+// src/main.aml
 namespace ConsoleApp {
     class Main {
         static fun main() {
@@ -533,7 +533,7 @@ dependencies: []
 ```
 
 ```amlang
-// src/StringUtils.as
+// src/StringUtils.aml
 namespace Utils {
     class StringUtils {
         static fun isEmpty(str: String): Bool {
@@ -599,7 +599,7 @@ namespace Utils {
    ```
    Error: No source files found in 'src/'
    ```
-   Solution: Ensure source files have `.as` extension and are in the correct directory.
+   Solution: Ensure source files have `.aml` extension and are in the correct directory.
 
 3. **Dependency Resolution Failed**:
    ```

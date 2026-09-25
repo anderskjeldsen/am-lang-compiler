@@ -2,6 +2,8 @@
 
 Am Lang is a modern object-oriented programming language designed for systems programming with a focus on cross-platform compatibility. It combines the power of low-level system programming with modern language features and safety guarantees.
 
+For current installation, optimization flags, build targets, and migration guidance, see the [v0.13.0 README](../README.md).
+
 ## Design Philosophy
 
 Am Lang is designed with these core principles:
@@ -25,7 +27,7 @@ Am Lang is designed with these core principles:
 - String interpolation with `$variable` and `${expression}` syntax
 - Automatic toString() method calls in string contexts
 - Type inference for cleaner code
-- Nullable primitive types with safe null handling
+- Explicit nullable object and primitive types (`T?`), safe calls, and null-coalescing
 
 ### Memory Management
 - Automatic reference counting
@@ -39,7 +41,7 @@ Am Lang is designed with these core principles:
 
 ### Type System
 - Strong static typing
-- Nullable primitive types with safe null handling
+- Explicit nullable object and primitive types (`T?`), safe calls, and null-coalescing
 - Type inference for cleaner code
 - Primitive types with automatic boxing/unboxing
 
@@ -51,7 +53,7 @@ Am Lang is designed with these core principles:
 ## Language Characteristics
 
 ### File Extension
-Am Lang source files use the `.as` extension (formerly `.aml`).
+AmLang source files use the `.aml` extension.
 
 ### Case Sensitivity
 Am Lang is case-sensitive. `MyClass` and `myclass` are different identifiers.
@@ -83,8 +85,10 @@ Here's a simple "Hello, World!" program in Am Lang:
 ```amlang
 namespace HelloWorld {
     class Main {
+        import Am.Lang
+
         static fun main() {
-            "Hello, World!".print()
+            "Hello, World!".println()
         }
     }
 }
