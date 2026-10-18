@@ -13,6 +13,8 @@ The [main README](../README.md) describes the current v0.13.0 compiler. Start wi
 - [Functions](10-functions.md)
 - [Threading and concurrency](11-threading.md)
 - [Native integration](12-native-integration.md)
+- [Reflection](13-reflection.md)
+- [Allocation scopes](14-allocation-scopes.md)
 
 ## Projects and tools
 

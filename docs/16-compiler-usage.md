@@ -38,16 +38,38 @@ Run `clean` from the project directory: its current implementation addresses `bu
 | `-ll <n>` | Compiler log level |
 | `-to` | Enable allocated-object tracking |
 | `-rl`, `-rlarc`, `-rdc` | Runtime, ARC, and generated-code diagnostics |
-| `--reflection` | Generate ClassRef/PropertyInfo registration metadata |
+| `-reflection` | Reflect every class, as before v0.14.0; prefer per-class `#reflect` |
 | `-ftree-shake` | Prune unreachable classes |
 | `-ftree-shake-report` | Report prunable classes; does not enable pruning itself |
 | `-fno-throws-opt` | Disable default throws/ABI optimization |
 | `-fthrows-opt` | Accepted compatibility flag; optimization is already on by default |
-| `-fborrow-slot-reads` | Enable narrowly proven borrowed array-property reads |
+| `-ftemplate-properties` | Accepted for compatibility; property-slot initialisation is decided per class since v0.14.0 |
+| `-fseed-properties` | Seed slots in the constructor instead of clearing on allocation (opt-in; not recommended) |
+| `-fescape-report` | Report `new` sites whose object cannot outlive its function; promotes nothing |
 | `-docformat json`, `md`, or `both` | Select API documentation format |
 | `-docout <directory>` | Select API documentation output directory |
 
 Test builds retain the uniform calling convention and exception checks so mocks can throw. Tree-shaking is also enabled by `treeShake: true` on a selected target; to get a report-only run, leave that setting and `-ftree-shake` off.
+
+`-fborrow-slot-reads` was removed in v0.14.0: borrowed property-slot reads are unconditional now, and the flag is no longer read. Leaving it on a command line is harmless but does nothing.
+
+### Allocation code generation (v0.14.0)
+
+How a new object's property slots reach their starting state is decided per class variant, with no flag:
+
+| the class's slots | what happens |
+|---|---|
+| all start as zero bytes (objects, `= null`) | the allocator's `memset` is the starting state; no image, no initializer call |
+| start as compile-time constants (any primitive, `PRIMITIVE_NULL`, literal defaults) | a per-variant `const property` image, memcpy'd by the primary constructor, prepared allocator, no initializer call |
+| have to be computed (string constant, `new`, a call, struct property, `init { }`, native base) | the instance initializer runs, as before |
+
+Measured on am-git: binary 4,087,696 to 4,079,920 bytes (**−0.19%**, 19 variants needing an image), and an 18-slot allocation loop 217 ms to 207 ms. The binary gets smaller because an image is emitted only where it displaces work; the pre-v0.14.0 opt-in emitted 211 of them on the same program for +0.98%.
+
+Not yet measured on m68k, where a memcpy is a libc call with no wide stores, and there is no slot-count threshold yet.
+
+`-fseed-properties` is the alternative that did not pay: constructors seed every slot nothing else assigns, so the allocator need only clear the object header. It is kept with its measurements so the experiment is not repeated, and it carries a known hole — `ClassRef.newInstance`, the native exception throwers and cross-thread object copies allocate without running a constructor, so a property with no initializer is left as heap garbage.
+
+`-fescape-report` is a report-only census of `new` sites whose object provably cannot outlive its function, as groundwork for promoting them into the isolate's arena automatically. See [Allocation scopes](14-allocation-scopes.md) for the arenas themselves.
 
 ## Output paths
 

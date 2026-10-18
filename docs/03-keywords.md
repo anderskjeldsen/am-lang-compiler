@@ -90,6 +90,31 @@ class MathUtils {
 }
 ```
 
+### `shared`
+Only before `static`, and only on a property. A plain `static` gets one copy
+PER ISOLATE (per thread, under the share-nothing thread model), so two threads
+never see each other's writes. `shared static` gets one copy for the whole
+process, reachable from every thread.
+
+```amlang
+class Counters {
+    shared static var total: Int     // one copy, every thread
+    static var perThread: Int        // one copy per isolate
+}
+```
+
+It is **unsynchronised**: no lock, no atomic and no ordering guarantee. A reader
+on another thread may see a stale value, and a 64-bit type (`Long`, `ULong`,
+`Double`) can tear on a 32-bit target such as m68k, giving half of each of two
+values. Use `Am.Threading.Mutex` when that matters.
+
+Primitives only. An object or struct is rejected, because one process-wide copy
+would hand a pointer into one isolate's heap to another thread. An initializer
+is rejected too: the slot starts at the type's zero value, so assign it in
+`main` before starting threads if you need another.
+
+`shared` is contextual, so it remains usable as an ordinary identifier.
+
 ## Class Modifiers
 
 ### `abstract`
@@ -143,6 +168,48 @@ primitive native class Int {
     override native fun toString(): String
 }
 ```
+
+## Allocation Scope Keywords
+
+See [Allocation Scopes](./14-allocation-scopes.md) for the full semantics; these
+entries cover the spelling.
+
+### `scratch`
+Bump-allocates every object created while the block runs — including objects
+created by functions it calls — from the isolate's arena, and reclaims the arena
+once those objects have died.
+
+```amlang
+scratch {
+    var report = Report.build(rows)      // these allocations come from the arena
+    report.print()
+}
+
+var row = scratch new Row(a, b)          // allocation-level form
+```
+
+### `keep`
+The inverse of `scratch`: forces the normal heap for a block or a single
+allocation, for objects meant to outlive the surrounding scratch extent.
+Outside any scratch extent it is a no-op, so library code whose allocations are
+long-lived by design can use it defensively.
+
+```amlang
+scratch {
+    var scratchRow = new Row(a, b)       // arena
+    keep {
+        Registry.add(new Row(a, b))      // normal heap, outlives the block
+    }
+}
+```
+
+### `fast`
+The legacy spelling of `scratch`, still accepted. The old name described the
+reward rather than the precondition, which invited using it on code whose
+objects survive the block — the one case it does not help.
+
+`scratch`, `keep` and `fast` are contextual, so all three remain usable as
+ordinary identifiers.
 
 ## Special Keywords
 

@@ -653,4 +653,27 @@ class MessagePassingExample {
 
 - Learn about [Native Integration](./12-native-integration.md)
 - Explore [Project Structure](./15-project-structure.md)
-- Understand [Build Targets](./17-build-targets.md)
+
+## Statics Are Per Thread
+
+Each thread runs in its own isolate, and **static properties live per isolate**.
+Two threads writing the same `static` touch different memory, so neither sees
+the other's value. This is deliberate: it is what makes threads share nothing
+and removes the need to lock ordinary state.
+
+```amlang
+class Counters {
+    static var perThread: Int        // one copy per isolate
+    shared static var total: Int     // one copy for the whole process
+}
+```
+
+Use `shared static` when you genuinely want one value across threads. It is
+**unsynchronised** — no lock, no atomic, no ordering guarantee — and a 64-bit
+type can tear on a 32-bit target. Guard it with `Am.Threading.Mutex` when
+correctness depends on it. It is restricted to primitives, because one
+process-wide copy of an object would hand a pointer into one isolate's heap to
+another thread. See [Keywords](./03-keywords.md) for the full rules.
+
+To move data between threads, prefer `Thread.send` / `Thread.receive`, which
+deep-copy the message, over sharing state.
