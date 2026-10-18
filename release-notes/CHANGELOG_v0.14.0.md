@@ -1,6 +1,6 @@
 # AmLang Compiler v0.14.0 Changelog
 
-## [0.14.0] - Unreleased
+## [0.14.0] - 2026-10-18
 
 Changes since v0.13.0.
 

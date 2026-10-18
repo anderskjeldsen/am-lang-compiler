@@ -1,6 +1,6 @@
 # AmLang v0.14.0 Release Notes
 
-**Release Date:** unreleased — record the actual date at publication
+**Release Date:** 2026-10-18
 
 v0.14.0 makes threads share nothing. Static properties now live per isolate, messages between isolates are deep-copied, and each isolate carries a bump arena that the new allocation scopes draw from. Around that sit a reflection model that costs nothing at startup, an exit status from `main`, and two opt-in allocation experiments, one of which pays and one of which is kept only so nobody repeats it.
 
