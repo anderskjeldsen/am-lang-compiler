@@ -38,16 +38,16 @@ namespace PerformanceTest
             var sumX = 0L
             var sumY = 0L
 
-            for (j = 0L to iterations) {
+            for (j = 0L until iterations) {
                 var points: Point[] = new Point[count]
-                for (i = 0 to count) {
+                for (i = 0 until count) {
                     points[i] = {
                         x: i,
                         y: i * 2L
                     }
                 }
 
-                for (i = 0 to count) {
+                for (i = 0 until count) {
                     if (i % modulo != 0L) {
                         sumX += points[i].x
                         sumY += points[i].y
@@ -66,9 +66,9 @@ namespace PerformanceTest
             var startTime = Date.now()
             var totalSize = 0L
 
-            for (j = 0L to iterations) {
+            for (j = 0L until iterations) {
                 var set = new HashSet<Int>()
-                for (i = 0L to count) {
+                for (i = 0L until count) {
                     if (i % modulo != 0L) {
                         set.add(i as Int)
                     }
@@ -87,8 +87,8 @@ namespace PerformanceTest
             var sumX = 0L
             var sumY = 0L
 
-            for (j = 0L to iterations) {
-                for (i = 0L to count) {
+            for (j = 0L until iterations) {
+                for (i = 0L until count) {
                     if (i % modulo != 0L) {
                         var point: Point = {
                             x: i,
