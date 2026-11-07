@@ -1,6 +1,6 @@
 # AmLang v0.15.0 Release Notes
 
-**Release Date:** Unreleased
+**Release Date:** 2026-11-07
 
 v0.15.0 is mostly about the language. It adds overloading by parameter type, `when` with smart casts, `data class`, `if` and `when` as expressions, default parameter values with named arguments, and the full set of compound assignments. It also changes what `for (i = a to b)` means, and makes `amlc` exit with a failure status when something fails. Many of the fixes are code that compiled without complaint and did the wrong thing.
 
