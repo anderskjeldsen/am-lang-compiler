@@ -4,21 +4,24 @@ AmLang is a statically typed, object-oriented language that compiles to C and th
 
 [![GitHub Release](https://img.shields.io/github/v/release/anderskjeldsen/am-lang-compiler)](https://github.com/anderskjeldsen/am-lang-compiler/releases)
 
-This repository contains public documentation, examples, installation tools, and compiler releases. This README describes **v0.14.0**. Start with the [release notes](release-notes/RELEASE_NOTES_v0.14.0.md) and [upgrade steps](#upgrading-to-v0140) if you already use AmLang.
+This repository contains public documentation, examples, installation tools, and compiler releases. This README describes **v0.15.0**. Start with the [release notes](release-notes/RELEASE_NOTES_v0.15.0.md) and [upgrade steps](#upgrading-to-v0150) if you already use AmLang.
 
-## What's new in v0.14.0
+## What's new in v0.15.0
 
-- **Share-nothing isolate threads:** each thread owns its static properties, and `Thread.send`/`receive` deep-copy messages between isolates. Native classes opt in with `#sendable`.
-- **`shared static` properties:** one copy for the whole process when you genuinely want threads to see the same value. Primitives only, stored as their own C type, and unsynchronised by design.
-- **Allocation scopes:** `scratch { ... }` bump-allocates from the isolate's arena, including in callees; `keep { ... }` forces the normal heap for objects that outlive the block; `#keepAlways` covers classes that escape by construction. `fast { ... }` remains as the legacy spelling.
-- **Reflection by `#reflect` closure:** an annotated class carries a read-only descriptor, built into `ClassRef`/`PropertyInfo` lazily, so startup costs nothing. The old `-reflection` flag now means "reflect everything".
-- **`main` may return `Int`**, and the value becomes the process exit status. A throwing `main` exits 1.
-- **Faster property reads:** call-free slot reads skip the retain/release pair unconditionally — measured at 30% on the HashSet insert path — superseding `-fborrow-slot-reads`.
-- **Property slots initialise per class:** a class whose slots all start as null costs a `memset` and nothing else, one whose starting state is constant gets a per-variant image memcpy'd in, and only one that has to compute its state keeps the instance-initializer call. On am-git that is 0.19% *less* binary and a 5% faster allocation loop; it replaces the opt-in `-ftemplate-properties`.
+- **Breaking: `for (i = a to b)` now includes `b`.** The new `for (i = a until b)` stops before it, which is what `to` used to do. The compiler warns about a `to` loop whose end is a `size`, `length` or `count`.
+- **Overloading by parameter type:** functions can share a name and a parameter count, and a call picks the best match. Virtual and interface overloads dispatch at run time.
+- **`when` with smart casts:** in an `is T` branch the subject is typed `T` without a cast. `when` also works without a subject and as an expression.
+- **`data class`:** generated `equals`, `hash`, `toString` and `copy()` from the primary-constructor properties.
+- **`if` and `when` as expressions, and expression bodies:** `var s = if (x < 0) "neg" else "pos"`, `fun area(): Int = this.w * this.h`.
+- **Default parameter values and named arguments,** for functions and constructors.
+- **More operators:** `*=`, `/=`, `%=`, `&=` and `^=`, and declarable `op /`, `op %`, `op &`, `op |` and `op ^`.
+- **`amlc` exits 1 when it fails,** including when a test fails. An unknown `-bt` is an error, and a build removes the old executable first.
+- **Platforms inherit their toolchain** from the platforms they extend, and `amlc test` compiles and links with the same options and `linkerCommand` as `amlc build`.
+- **`requiredStack` on a build target:** an Amiga program reports a too-small stack at startup instead of crashing.
 
-See the [full changelog](CHANGELOG.md) for the fixes to property stamping, name-versus-method binding, generics inference and test startup.
+See the [full changelog](CHANGELOG.md) for the fixes, many of them code that compiled silently and did the wrong thing.
 
-**This release requires the matching `am-lang-core`.** The generated code addresses per-isolate statics, the immortal object flag and new `aclass` fields, none of which exist in an older core.
+**Upgrade `am-lang-core` to 0.15.0 at the same time.** Its loops are written with `until`, which older compilers don't know, and its 0.14.0 loops would run one pass too many under this compiler.
 
 ## Installation
 
@@ -45,16 +48,16 @@ Download from [GitHub Releases](https://github.com/anderskjeldsen/am-lang-compil
 
 | Compiler host | Archive | Launcher/executable |
 |---|---|---|
-| Linux x64 | `amlc-linux-x64-0.14.0.tar.gz` | `amlc-linux` |
-| macOS ARM64 | `amlc-macos-arm64-0.14.0.tar.gz` | `amlc-mac-arm64` |
-| Windows x64 | `amlc-windows-x64-0.14.0.zip` | `amlc-windows.exe` |
-| Any supported Java 21+ host | `amlc-jar-0.14.0.tar.gz` or `.zip` | `amlc.sh`, `amlc.bat`, or `java -jar amlc-0.14.0.jar` |
+| Linux x64 | `amlc-linux-x64-0.15.0.tar.gz` | `amlc-linux` |
+| macOS ARM64 | `amlc-macos-arm64-0.15.0.tar.gz` | `amlc-mac-arm64` |
+| Windows x64 | `amlc-windows-x64-0.15.0.zip` | `amlc-windows.exe` |
+| Any supported Java 21+ host | `amlc-jar-0.15.0.tar.gz` or `.zip` | `amlc.sh`, `amlc.bat`, or `java -jar amlc-0.15.0.jar` |
 
 For example, on Linux x64:
 
 ```bash
-curl -fLO https://github.com/anderskjeldsen/am-lang-compiler/releases/download/v0.14.0/amlc-linux-x64-0.14.0.tar.gz
-tar -xzf amlc-linux-x64-0.14.0.tar.gz
+curl -fLO https://github.com/anderskjeldsen/am-lang-compiler/releases/download/v0.15.0/amlc-linux-x64-0.15.0.tar.gz
+tar -xzf amlc-linux-x64-0.15.0.tar.gz
 chmod +x amlc-linux
 ./amlc-linux --version
 ```
@@ -141,7 +144,7 @@ Bare types such as `String` are non-null. Use `String?` or `Int?` when a value m
 
 Struct equality compares fields recursively. Struct copy/reference behavior depends on the operation; do not assume every assignment and argument has the same semantics as an object reference.
 
-Threading and suspend support come from the compiler and `am-lang-core` runtime. **v0.14.0 moves to share-nothing isolate threads:** static properties live per isolate, `Thread.send`/`receive` deep-copy their messages, and each isolate carries the bump arena that [allocation scopes](docs/14-allocation-scopes.md) draw from. Use `shared static` for state that must be one copy across threads, and `#reflect` for [reflection](docs/13-reflection.md); `-reflection` still reflects everything.
+Threading and suspend support come from the compiler and `am-lang-core` runtime. **Since v0.14.0, threads share nothing:** static properties live per isolate, `Thread.send`/`receive` deep-copy their messages, and each isolate carries the bump arena that [allocation scopes](docs/14-allocation-scopes.md) draw from. Use `shared static` for state that must be one copy across threads, and `#reflect` for [reflection](docs/13-reflection.md); `-reflection` still reflects everything.
 
 ### Directives and runtime information
 
@@ -279,29 +282,28 @@ The **compiler host** and the **generated program's target** are separate choice
 | MorphOS | `morphos-ppc` |
 | AROS | `aros-x86-64`, `aros-arm64`, `aros-m68k` |
 
-Target availability depends on your package configuration, C toolchain, and native dependencies. A Windows-hosted compiler is distributed, but the new Windows x64 **core runtime target** remains separate development work and is not included in this v0.14.0 core branch. Generated executables may require platform libraries; native compilation does not imply a fully static executable.
+Target availability depends on your package configuration, C toolchain, and native dependencies. A Windows-hosted compiler is distributed, and am-lang-core 0.15.0 adds a `windows-x64` runtime target, built with the MinGW cross-compiler. Generated executables may require platform libraries; native compilation does not imply a fully static executable.
 
 ## Performance
 
-The [benchmark example](examples/performance_test/ReadMe.md) compares array and non-array point-processing workloads across several languages. Its recorded timings are historical measurements for that workload and machine, not a v0.14.0 benchmark or a general performance ranking.
+The [benchmark example](examples/performance_test/ReadMe.md) compares array and non-array point-processing workloads across several languages. Its recorded timings are historical measurements for that workload and machine, not a v0.15.0 benchmark or a general performance ranking.
 
-v0.14.0 focuses on allocation cost — arenas, property-slot seeding and borrowed slot reads — on top of v0.13.0's work on generated-code size, exception-call overhead and incremental rebuilds. Measure your application with its intended C compiler, optimization flags, and target hardware.
+v0.14.0 focused on allocation cost — arenas, property-slot seeding and borrowed slot reads — on top of v0.13.0's work on generated-code size, exception-call overhead and incremental rebuilds. Measure your application with its intended C compiler, optimization flags, and target hardware.
 
-## Upgrading to v0.14.0
+## Upgrading to v0.15.0
 
-1. **Upgrade `am-lang-core` to the matching release.** Not optional: the generated code addresses per-isolate statics, the immortal object flag and new `aclass` fields, none of which exist in an older core. A mismatched pair fails at the C compile.
-2. **Audit statics that were shared between threads.** A plain `static` is now one copy *per isolate*, so two threads writing it no longer see each other's value — silently. Move genuinely shared primitive state to `shared static`, guard it yourself, or pass it in a message.
-3. **Audit what you send between threads.** `Thread.send`/`receive` deep-copy, and a native class that has not opted in with `#sendable` is refused at runtime.
-4. **Replace `-reflection` with `#reflect` where you can.** The flag still works and now reflects every class; the directive reflects one class and its closure, which is what keeps startup free.
-5. **Drop `-fborrow-slot-reads` from build scripts.** Borrowed property-slot reads are unconditional now and the flag is no longer read.
-6. **Check `main`'s return type.** An `Int` return is now the process exit status, and a throwing `main` exits 1 instead of 0.
+1. **Rewrite `to` loops that stop before their end to use `until`.** Start with the compile-time warnings, then review `to` loops whose end is a variable or expression by hand.
+2. **Upgrade `am-lang-core` to 0.15.0.**
+3. **Check scripts and CI that call `amlc`.** A non-zero exit status now means a real failure, and `amlc test` exits 1 when any test fails.
+4. **Fix code that was being silently dropped.** `init` blocks and property initializers are now validated, so errors there that used to vanish are compile errors.
+5. **If you call an AmLang `op -` by its C symbol, use `_op__minus`.**
 
-Upgrading from v0.12.0 or earlier? Work through the [v0.13.0 upgrade steps](release-notes/RELEASE_NOTES_v0.13.0.md) first — legacy object nullability is rejected, test output moved to `test-builds/`, and the borrowed-parameter convention from v0.12.0 applies to native functions that retain object arguments. See the [v0.14.0 release notes](release-notes/RELEASE_NOTES_v0.14.0.md) for details and known limitations.
+Upgrading from v0.13.0 or earlier? Work through the [v0.14.0 upgrade steps](release-notes/RELEASE_NOTES_v0.14.0.md) first; from v0.12.0 or earlier, the [v0.13.0 upgrade steps](release-notes/RELEASE_NOTES_v0.13.0.md) before that — legacy object nullability is rejected, test output moved to `test-builds/`, and the borrowed-parameter convention from v0.12.0 applies to native functions that retain object arguments. See the [v0.15.0 release notes](release-notes/RELEASE_NOTES_v0.15.0.md) for details and known limitations.
 
 ## Documentation and examples
 
 - [Documentation index](docs/README.md), [getting started](docs/18-getting-started.md), and [compiler usage](docs/16-compiler-usage.md)
 - [Hello world](examples/hello-world/), [loop syntax](examples/loop-keyword-demo/), [file browser](examples/file-browser/), and [unit tests](examples/unit-testing/)
-- [v0.14.0 release notes](release-notes/RELEASE_NOTES_v0.14.0.md), [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md), and [release history](CHANGELOG.md)
+- [v0.15.0 release notes](release-notes/RELEASE_NOTES_v0.15.0.md), [v0.14.0 release notes](release-notes/RELEASE_NOTES_v0.14.0.md), [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md), and [release history](CHANGELOG.md)
 
 Libraries include [am-lang-core](https://github.com/anderskjeldsen/am-lang-core), [am-json](https://github.com/anderskjeldsen/am-json), [am-net](https://github.com/anderskjeldsen/am-net), [am-ssl](https://github.com/anderskjeldsen/am-ssl), [am-ui](https://github.com/anderskjeldsen/am-ui), and [am-imaging](https://github.com/anderskjeldsen/am-imaging). Check each library's platform support and compiler compatibility when adding it to a project.

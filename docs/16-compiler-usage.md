@@ -85,10 +85,23 @@ Tests no longer share the production generated-source tree. String constants use
 
 ## Toolchains and configuration
 
-Platforms declare `ccCommand` (preferred) or `gccCommand`, assembler/linker commands, include paths, and native sources. Build targets select a platform and can override C compiler/assembler commands. `ccCommand` wins over `gccCommand` when both are supplied.
+Platforms declare `ccCommand` (preferred) or `gccCommand`, assembler/linker commands, include paths, and native sources. Build targets select a platform and can override C compiler/assembler commands. `ccCommand` wins over `gccCommand` when both are supplied. A platform that names no compiler inherits its C compiler, assembler and linker commands from the platforms it extends, so a variant only needs `extends:`.
 
 Use `gccRemoveOptions` and `linkerRemoveFlags` on a platform to subtract inherited flags. `dockerBuild` runs make in a container; its optional `platform` selects the container architecture. `sshBuild` uses SSH and rsync. `dockerTest` configures container execution of test binaries.
 
 Root-package `compilerFlags: [singleThreaded]` selects the runtime's single-threaded ARC configuration. It must be consistent across all objects. Clean/rebuild when switching that setting or compiler commands; changes to target overrides do not automatically invalidate existing object files.
+
+### Required stack
+
+A build target can state how much stack its program needs:
+
+```yaml
+buildTargets:
+  - id: amigaos_docker
+    platform: amigaos
+    requiredStack: 65536
+```
+
+Before anything else runs, the program compares this with its actual stack. If the stack is smaller, it prints the size needed and exits with status 20. On AmigaOS the user sets the stack with the Shell's `Stack` command or in the icon, and the program does not change it. The check does nothing on platforms outside the Amiga family. The compiler cannot work out the number, so measure it.
 
 See the [README](../README.md#project-and-build-configuration) for configuration examples and the [release notes](../release-notes/RELEASE_NOTES_v0.13.0.md) for migration requirements.

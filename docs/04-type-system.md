@@ -336,7 +336,7 @@ namespace GenericExample {
 
 1. **Use Type Inference**: Let the compiler infer obvious types
 2. **Explicit Nullable**: Always explicitly mark nullable types
-3. **Prefer Immutable**: Use `const var` when values don't change
+3. **Prefer Immutable**: Use `const` when values don't change
 4. **Meaningful Names**: Use descriptive type and variable names
 5. **Null Checks**: Always handle nullable types safely
 

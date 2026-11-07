@@ -141,9 +141,15 @@ var nullable: Int? = null
 =   // Assignment
 +=  // Add and assign
 -=  // Subtract and assign
-*=  // Multiply and assign
-/=  // Divide and assign
+*=  // Multiply and assign (since v0.15.0)
+/=  // Divide and assign (since v0.15.0)
+%=  // Remainder and assign (since v0.15.0)
+&=  // Bitwise AND and assign (since v0.15.0)
+|=  // Bitwise OR and assign
+^=  // Bitwise XOR and assign (since v0.15.0)
 ```
+
+The right side is a whole expression: `x += a + b` adds `a + b`. A compound assignment works on locals, properties, statics, array elements and nullable primitives (`Int?`: a null value throws a null-reference exception). On a class with an operator function, `v *= 3` means `v = v * 3`. `%`, `&`, `|`, `^` and their assignment forms are for integer types; on `Float` / `Double` they are a compile error.
 
 ### Member Access
 ```amlang
@@ -176,14 +182,36 @@ if (condition1) {
 
 ### Loops
 ```amlang
-// For loop
-for (i in 0 to 10) {
+// For loop: `to` includes the end, `until` stops before it
+for (i = 0 to 10) {
+    // i = 0, 1, ..., 10
+}
+for (i = 0 until list.getSize()) {
+    // i = 0 .. size - 1
+}
+
+// Every element of a collection
+each(list, item) {
     // statements
 }
 
 // While loop (based on patterns in test files)
 while (condition) {
     // statements
+}
+```
+
+### When Statement
+```amlang
+when (subject) {
+    is Circle -> area = subject.r * subject.r   // smart cast to Circle
+    1, 2 -> small = true                         // value list
+    else -> other = true
+}
+
+when {
+    x < 0 -> sign = -1
+    else -> sign = 1
 }
 ```
 
@@ -195,7 +223,7 @@ while (condition) {
 var name: Type = value
 
 // Immutable variable (constant)
-const var name: Type = value
+const name: Type = value
 
 // Type inference
 var name = value

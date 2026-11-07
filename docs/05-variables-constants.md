@@ -36,14 +36,14 @@ name = "Alice"                // Assignment
 name.print()                  // OK - now initialized
 ```
 
-## Constants (`const var`)
+## Constants (`const`)
 
-Use `const var` to declare immutable variables (constants):
+Use `const` to declare immutable variables (constants). The older `const var` spelling still compiles but is deprecated for local variables:
 
 ```amlang
-const var PI = 3.14159
-const var MAX_USERS: Int = 1000
-const var COMPANY_NAME = "Acme Corp"
+const PI = 3.14159
+const MAX_USERS: Int = 1000
+const COMPANY_NAME = "Acme Corp"
 ```
 
 ### Compile-time Constants
@@ -51,11 +51,30 @@ const var COMPANY_NAME = "Acme Corp"
 Constants must be initialized with compile-time known values:
 
 ```amlang
-const var MAX_SIZE = 100              // OK - literal
-const var GREETING = "Hello"          // OK - string literal
-const var DEFAULT_TIMEOUT = 30 * 1000 // OK - compile-time expression
+const MAX_SIZE = 100              // OK - literal
+const GREETING = "Hello"          // OK - string literal
+const DEFAULT_TIMEOUT = 30 * 1000 // OK - compile-time expression
 
-// const var current = getCurrentTime() // Error - runtime value
+// const current = getCurrentTime() // Error - runtime value
+```
+
+### Constant Properties
+
+`const` works on properties too. A constant property is set only while the object is built: by its initializer, `init { }` or the primary constructor. Any other write is a compile error.
+
+```amlang
+class Account(const id: Int, var balance: Int) {   // `const id` is a read-only property
+    const opened: Long = 0
+    const var label: String = ""                    // older spelling, same meaning
+
+    init {
+        this.label = "acct-" + this.id.toString()  // OK - still being built
+    }
+
+    fun rename() {
+        // this.label = "x"                         // Error - can't assign to constant property
+    }
+}
 ```
 
 ## Nullable Variables
@@ -254,8 +273,8 @@ class PersonManager
 interface Drawable
 
 // SCREAMING_SNAKE_CASE for constants
-const var MAX_RETRY_COUNT = 3
-const var DEFAULT_TIMEOUT = 5000
+const MAX_RETRY_COUNT = 3
+const DEFAULT_TIMEOUT = 5000
 
 // underscore prefix for private fields
 class Example {
@@ -285,8 +304,8 @@ namespace VariableExamples {
             var numbers = new Int[] {1, 2, 3, 4, 5}
             
             // Constants
-            const var MAX_ATTEMPTS = 3
-            const var RETRY_DELAY = 1000
+            const MAX_ATTEMPTS = 3
+            const RETRY_DELAY = 1000
             
             // Nullable variables
             var optionalInt: Int? = null
@@ -381,8 +400,8 @@ var flag: Bool
 ### 2. Prefer Constants When Possible
 ```amlang
 // Good
-const var TAX_RATE = 0.08
-const var COMPANY_NAME = "Acme Corp"
+const TAX_RATE = 0.08
+const COMPANY_NAME = "Acme Corp"
 
 // Less ideal if values don't change
 var taxRate = 0.08

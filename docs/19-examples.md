@@ -184,12 +184,13 @@ namespace LoopExamples {
     class LoopDemo {
         static fun main() {
             "Counting up:".println()
-            for (i in 1 to 5) {
+            for (i = 1 to 5) {
                 "Count: ${i}".println()
             }
             
             "Counting down:".println()
-            for (i in 5 to 1) {
+            for (k = 0 until 5) {
+                var i = 5 - k
                 "Countdown: ${i}".println()
             }
         }
@@ -467,7 +468,7 @@ namespace CalculatorExample {
             var result = 1.0
             var exp = if (exponent < 0) -exponent else exponent
             
-            for (i in 1 to exp) {
+            for (i = 1 to exp) {
                 result *= base
             }
             
@@ -485,7 +486,7 @@ namespace CalculatorExample {
             }
             
             var result = 1L
-            for (i in 2 to n) {
+            for (i = 2 to n) {
                 result *= i.toLong()
             }
             
@@ -646,7 +647,7 @@ namespace BankingSystem {
         }
         
         fun findAccount(accountNumber: String): BankAccount {
-            for (i in 0 to this.accountCount - 1) {
+            for (i = 0 to this.accountCount - 1) {
                 if (this.accounts[i].getAccountNumber() == accountNumber) {
                     return this.accounts[i]
                 }
@@ -656,7 +657,7 @@ namespace BankingSystem {
         
         fun getTotalAssets(): Double {
             var total = 0.0
-            for (i in 0 to this.accountCount - 1) {
+            for (i = 0 to this.accountCount - 1) {
                 if (this.accounts[i].isActive()) {
                     total += this.accounts[i].getBalance()
                 }
@@ -666,7 +667,7 @@ namespace BankingSystem {
         
         fun printAllAccounts() {
             "=== Bank Account Summary ===".println()
-            for (i in 0 to this.accountCount - 1) {
+            for (i = 0 to this.accountCount - 1) {
                 this.accounts[i].getAccountSummary().println()
                 "".println()
             }
@@ -746,7 +747,7 @@ namespace ThreadingExamples {
         override fun run() {
             "${this.workerId} started".println()
             
-            for (i in 1 to this.iterations) {
+            for (i = 1 to this.iterations) {
                 if (this.increment) {
                     this.counter.increment()
                     "${this.workerId}: Incremented to ${this.counter.getValue()}".println()
@@ -808,7 +809,7 @@ namespace ThreadingExamples {
             override fun run() {
                 "${this.producerId} started producing".println()
                 
-                for (i in 1 to this.itemCount) {
+                for (i = 1 to this.itemCount) {
                     var item = "${this.producerId}-Item-${i}"
                     
                     while (!this.buffer.put(item)) {

@@ -57,12 +57,18 @@ var age = 25  // type inferred
 ```
 
 ### `const`
-Used with `var` to declare an immutable variable (constant).
+Declares an immutable variable or property (a constant). `const var` is the older spelling: still accepted, but deprecated for local variables.
 
 ```amlang
-const var PI = 3.14159
-const var MAX_SIZE: Int = 100
+const PI = 3.14159
+const MAX_SIZE: Int = 100
+
+class Account(const id: Int, var balance: Int) {   // `const` constructor parameter = read-only property
+    const created: Long = 0
+}
 ```
+
+A `const` property can be set only by its initializer, `init { }` and the primary constructor. Any other write, including `this.x = …` in a method, `+=` and `++`, is a compile error.
 
 ## Access Modifiers
 
@@ -147,6 +153,26 @@ class Car : Vehicle {
     }
 }
 ```
+
+### `data`
+Declares a data class (since v0.15.0): a class whose value is its primary-constructor properties.
+
+```amlang
+data class Point(var x: Int, var y: Int)
+
+var a = new Point(1, 2)
+a.toString()                 // "Point(x=1, y=2)"
+a == new Point(1, 2)         // true: compares the properties
+var b = a.copy()             // a new Point with the same values
+```
+
+- The compiler generates `equals`, `hash`, `toString` and `copy()` from the primary constructor's properties. `equals` and `hash` agree, so data classes work as `HashMap` keys and `HashSet` elements.
+- Every primary-constructor parameter must be a property: `var x` or `const x`. Properties declared in the body take no part.
+- Use `const` for values that serve as keys: `data class Point(const x: Int, const y: Int)`. A `var` key changed after insertion changes its hash, and the set or map can no longer find it.
+- A member the class declares itself (for example its own `toString`) is kept and not generated.
+- `toString` prints `null` for a null property. `copy()` is shallow: object properties are shared, not copied.
+- The body is optional. A data class can still have a body with more methods and properties.
+- `data` is contextual: it is a modifier only directly before `class`, so it stays usable as a name.
 
 ## Native Integration Keywords
 
@@ -299,31 +325,57 @@ var points = [p1, p2]  // Array contains copies of the struct data
 ## Extension Keywords
 
 ### `ext`
-Declares an extension function that adds functionality to existing types.
+Declares an extension function that adds functionality to existing types. The
+receiver is the first parameter; the function lives in a class, and callers
+use it as a method of the receiver while that class's namespace is imported
+(see `Am.Collections.CollectionExtensions`).
 
 ```amlang
-ext fun String.isEmail(): Bool {
-    // extension function implementation
+class StringExtensions {
+    ext fun isEmail(s: String): Bool {
+        return s.contains("@")
+    }
 }
+
+// with the namespace imported:
+"a@b.c".isEmail()
 ```
 
 ## Loop Keywords
 
 ### `for`
-Declares a for loop.
+Counts an `Int` loop variable up from a start value to an end value, in steps
+of 1. Both bounds are evaluated once, before the first pass. If the end is
+below the start, the body does not run.
 
 ```amlang
-for (i in 0 to 10) {
-    i.toString().print()
+for (i = 0 to 10) {
+    i.toString().print()     // 0 1 2 ... 10
 }
 ```
 
+To go over the elements of a collection, use `each(list, item) { ... }`.
+
 ### `to`
-Used in range expressions for loops.
+Ends a `for` range, **including** the end value: `for (i = 1 to 3)` runs with
+1, 2 and 3, and `for (i = 0 to 0)` runs once.
 
 ```amlang
-for (i in 1 to 100) {
-    // loop body
+for (i = 1 to 100) {
+    // i = 1 .. 100
+}
+```
+
+Before 0.15.0, `to` stopped before the end value (what `until` does now).
+
+### `until`
+Ends a `for` range, **excluding** the end value. This is the form for indexes:
+`for (i = 0 until arr.length())` visits every element, and
+`for (i = 0 until 0)` does not run.
+
+```amlang
+for (i = 0 until list.getSize()) {
+    list.get(i).println()
 }
 ```
 
@@ -331,7 +383,7 @@ for (i in 1 to 100) {
 Skips the current iteration of a loop and continues with the next iteration.
 
 ```amlang
-for (i in 1 to 10) {
+for (i = 1 to 10) {
     if (i % 2 == 0) {
         continue  // Skip even numbers
     }
@@ -375,6 +427,15 @@ if (condition) {
 }
 ```
 
+Without braces, `if` is an expression with a value. The `else` is required, and only the chosen branch is evaluated:
+
+```amlang
+var sign = if (x < 0) "neg" else if (x == 0) "zero" else "pos"
+return if (found) item else null      // a null branch makes the type nullable (Item?)
+```
+
+Both branches must have the same type, except that one of them may be `null`.
+
 ### `else`
 Alternative branch for if statements.
 
@@ -385,6 +446,46 @@ if (condition) {
     // else branch
 }
 ```
+
+### `when`
+Multi-way branch (since v0.15.0). The first branch whose condition matches runs; the rest are skipped.
+
+```amlang
+when (shape) {
+    is Circle -> area = 3.14 * shape.r * shape.r   // smart cast: shape is a Circle here
+    is Rect -> {
+        area = shape.w * shape.h
+    }
+    !is Square -> log("not a square")
+    else -> area = 0.0
+}
+
+when (color) {
+    Color.Red -> name = "red"
+    Color.Green, Color.Blue -> name = "cool"   // a comma-separated list matches any of them
+}
+
+when {                                          // no subject: boolean conditions
+    x < 0 -> sign = -1
+    x == 0 -> sign = 0
+    else -> sign = 1
+}
+```
+
+- A condition is `is T`, `!is T`, a value (compared with `==`, so strings compare by content), or `else`. `else` must be the last branch and stand alone.
+- A body is a `{ block }` or one statement on the rest of the line.
+- **Smart cast:** in a branch whose only condition is `is T`, the subject has type `T` — no `as` needed, and that includes writes such as `shape.name = n`. This works for class, interface and `Any` subjects (`is Int`, `is String`). It is not applied in a branch that assigns to the subject.
+- The subject is evaluated once. A subject that is not a plain local name is evaluated into a hidden local first.
+- `when` can also be a value: `var y = when …`, `return when …`, a function argument or an expression body. Then each branch must be a single expression, not a `{ }` block; an `else` branch is required; and the subject must be a plain variable (store anything else in a local first). It works like the equivalent `if … else if … else` expression, smart casts included:
+
+```amlang
+fun area(s: Shape): Int = when (s) {
+    is Circle -> s.r * s.r * 3
+    is Rect -> s.w * s.h
+    else -> 0
+}
+```
+- `when` is contextual: it starts the construct only when `(` or `{` follows, so it stays usable as a name.
 
 ### `return`
 Returns a value from a function.
@@ -439,7 +540,6 @@ Some keywords are contextual and only have special meaning in certain contexts:
 
 The following words may become keywords in future versions:
 - `match`
-- `when`
 - `async`
 - `await`
 - `yield`

@@ -29,11 +29,20 @@ fun printMessage(message: String) {
 }
 ```
 
+### Expression Bodies
+
+A function whose body is one expression can be written with `=`. The return type must be declared:
+
+```amlang
+fun area(): Int = this.width * this.height
+static fun sign(x: Int): String = if (x < 0) "neg" else "pos"
+```
+
 ### Functions Without Return Values
 
 ```amlang
 fun printNumbers(count: Int) {
-    for (i in 1 to count) {
+    for (i = 1 to count) {
         i.toString().println()
     }
     // No return statement needed
@@ -75,6 +84,39 @@ class Person(var name: String, var age: Int) {
     }
 }
 ```
+
+### Default Values
+
+A parameter can have a default value. A call that leaves the argument out gets the default:
+
+```amlang
+fun label(text: String, size: Int = 12, bold: Bool = false): String {
+    return "${text} ${size} ${bold}"
+}
+
+label("Hi")              // label("Hi", 12, false)
+label("Hi", 14)          // label("Hi", 14, false)
+```
+
+- A default is a **constant**: a number (`-3` and suffixed literals like `5UI` included), a string without `${...}`, `true`/`false`, a character, or `null`. The caller copies it into the call, so it means the same thing wherever the function is called from. Anything else is a compile error.
+- Parameters with defaults come **after** all parameters without one.
+- Defaults work on methods, static functions and primary constructors (`class Pt(var x: Int, var y: Int = 0)`), native functions included.
+- An override gets the defaults of the function it overrides; declare them on the base.
+- When one overload takes the arguments exactly, it wins: with both `k(a: Int)` and `k(a: Int, b: Int = 0)`, `k(1)` calls the first.
+
+### Named Arguments
+
+An argument can name its parameter, `name = value`. Named arguments may come in any order and can skip over parameters that have defaults:
+
+```amlang
+label("Hi", bold = true)            // label("Hi", 12, true)
+label(bold = true, text = "Hi")     // label("Hi", 12, true)
+var p = new Pt(y = 7, x = 2)
+```
+
+- Positional arguments come first; a positional argument after a named one is an error.
+- Each parameter is given once: a name that repeats, matches no parameter, or names a parameter already given by position is an error.
+- Arguments are evaluated in **parameter** order, not the order written.
 
 ### Parameter Validation
 
@@ -222,7 +264,7 @@ class Printer {
     
     fun print(items: String[], separator: String) {
         var result = ""
-        for (i in 0 to items.length - 1) {
+        for (i = 0 to items.length - 1) {
             if (i > 0) {
                 result += separator
             }
@@ -232,6 +274,28 @@ class Printer {
     }
 }
 ```
+
+### How a call picks an overload
+
+Overloads may share a name and a parameter count as long as their parameter types differ (since v0.15.0; before that, same-count overloads were rejected as duplicates, and calls always bound to the first one). A call picks among them by the static types of its arguments:
+
+- An argument whose class is exactly the parameter's class is the best match. Generic arguments must agree too: `Int[]` does not match `String[]`.
+- Next is a subclass or implementing class, and a closer base class beats a more distant one.
+- A number can widen to another number type (`Int` to a `Long` parameter), but an exact numeric match wins.
+- `Any`, a generic type parameter, a function-typed parameter, and `null` accept anything that fits.
+
+The overload with the best total wins. On a tie, the one declared first wins. The declared type of the argument decides, not its run-time class:
+
+```amlang
+static fun kind(s: Shape): String { return "shape" }
+static fun kind(c: Circle): String { return "circle" }
+
+kind(new Circle())          // "circle"
+var s: Shape = new Circle()
+kind(s)                     // "shape"
+```
+
+Overloads that are `open`, `override`, or declared in an interface dispatch at run time like any other virtual method. An `override` replaces the overload with the same parameter types.
 
 ### Object Creation Patterns
 
@@ -395,8 +459,8 @@ namespace Utils {
             }
             
             var result = ""
-            for (i in str.length() - 1 to 0) {
-                result += str.charAt(i)
+            for (k = 1 to str.length()) {
+                result += str.charAt(str.length() - k)
             }
             return result
         }
@@ -409,9 +473,9 @@ namespace Utils {
                 return false
             }
             
-            for (i in 0 to haystack.length() - needle.length()) {
+            for (i = 0 to haystack.length() - needle.length()) {
                 var found = true
-                for (j in 0 to needle.length() - 1) {
+                for (j = 0 to needle.length() - 1) {
                     if (haystack.charAt(i + j) != needle.charAt(j)) {
                         found = false
                         break
@@ -432,7 +496,7 @@ namespace Utils {
             var parts = new List<String>()
             var current = ""
             
-            for (i in 0 to str.length() - 1) {
+            for (i = 0 to str.length() - 1) {
                 var char = str.charAt(i)
                 if (char.toString() == delimiter) {
                     parts.add(current)
@@ -452,7 +516,7 @@ namespace Utils {
     
     class ArrayUtils {
         static fun <T> indexOf(array: T[], item: T): Int {
-            for (i in 0 to array.length - 1) {
+            for (i = 0 to array.length - 1) {
                 if (array[i] == item) {
                     return i
                 }
@@ -466,7 +530,7 @@ namespace Utils {
         
         static fun <T> reverse(array: T[]): T[] {
             var result = new T[array.length]
-            for (i in 0 to array.length - 1) {
+            for (i = 0 to array.length - 1) {
                 result[array.length - 1 - i] = array[i]
             }
             return result
@@ -478,7 +542,7 @@ namespace Utils {
             }
             
             var result = array[0]
-            for (i in 1 to array.length - 1) {
+            for (i = 1 to array.length - 1) {
                 result += separator + array[i]
             }
             return result
@@ -492,8 +556,8 @@ namespace Utils {
 ```amlang
 namespace Math {
     class MathLibrary {
-        static const var PI: Double = 3.14159265359
-        static const var E: Double = 2.71828182846
+        static const PI: Double = 3.14159265359
+        static const E: Double = 2.71828182846
         
         static fun abs(x: Int): Int {
             return if (x < 0) -x else x
@@ -523,7 +587,7 @@ namespace Math {
             var result = 1.0
             var exp = MathLibrary.abs(exponent)
             
-            for (i in 1 to exp) {
+            for (i = 1 to exp) {
                 result *= base
             }
             
@@ -539,7 +603,7 @@ namespace Math {
             }
             
             var result = 1L
-            for (i in 2 to n) {
+            for (i = 2 to n) {
                 result *= i.toLong()
             }
             return result
@@ -556,7 +620,7 @@ namespace Math {
             var a = 0L
             var b = 1L
             
-            for (i in 2 to n) {
+            for (i = 2 to n) {
                 var temp = a + b
                 a = b
                 b = temp
@@ -632,7 +696,7 @@ namespace Validation {
             }
             
             var digits = 0
-            for (i in 0 to phone.length() - 1) {
+            for (i = 0 to phone.length() - 1) {
                 var char = phone.charAt(i)
                 if (char.isDigit()) {
                     digits++
@@ -654,7 +718,7 @@ namespace Validation {
             var hasDigit = false
             var hasSpecial = false
             
-            for (i in 0 to password.length() - 1) {
+            for (i = 0 to password.length() - 1) {
                 var char = password.charAt(i)
                 if (char.isUpperCase()) {
                     hasUpper = true

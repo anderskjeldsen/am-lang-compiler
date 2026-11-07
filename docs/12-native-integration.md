@@ -337,9 +337,9 @@ namespace Posix {
         static native fun alarm(seconds: Int): Int
         
         // Signal constants
-        static const var SIGINT: Int = 2
-        static const var SIGTERM: Int = 15
-        static const var SIGUSR1: Int = 10
+        static const SIGINT: Int = 2
+        static const SIGTERM: Int = 15
+        static const SIGUSR1: Int = 10
     }
 }
 ```
@@ -525,7 +525,7 @@ class ResourceManager {
     }
     
     fun cleanup() {
-        for (resource in this.resources) {
+        each(this.resources, resource) {
             resource.release()
         }
         this.resources.clear()

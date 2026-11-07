@@ -77,7 +77,8 @@ class CountdownTask : Runnable {
     }
     
     override fun run() {
-        for (i in count to 1) {
+        for (k = 0 until count) {
+            var i = count - k
             "${i}...".println()
             Thread.sleep(1000)
         }
@@ -133,7 +134,7 @@ class NamedThreadDemo {
     static fun main() {
         var threads = new Thread[3]
         
-        for (i in 0 to 2) {
+        for (i = 0 to 2) {
             var task = new NumberPrinter(i)
             threads[i] = new Thread(task)
             threads[i].name = "Thread-${i}"
@@ -141,7 +142,7 @@ class NamedThreadDemo {
         }
         
         // Wait for all threads
-        for (i in 0 to 2) {
+        for (i = 0 to 2) {
             threads[i].join()
         }
     }
@@ -246,7 +247,7 @@ class Producer : Runnable {
     }
     
     override fun run() {
-        for (i in 1 to itemCount) {
+        for (i = 1 to itemCount) {
             var item = "Item-${i}"
             while (!buffer.put(item)) {
                 Thread.sleep(100)  // Wait if buffer full
@@ -332,7 +333,7 @@ class ThreadPool {
         this.workers = new Thread[workerCount]
         this.taskQueue = new Queue<Task>()
         
-        for (i in 0 to workerCount - 1) {
+        for (i = 0 to workerCount - 1) {
             var worker = new Worker(taskQueue, i)
             workers[i] = new Thread(worker)
             workers[i].name = "Worker-${i}"
@@ -345,7 +346,7 @@ class ThreadPool {
     }
     
     fun shutdown() {
-        for (worker in workers) {
+        each(workers, worker) {
             // Implementation would need thread interruption
         }
     }
@@ -386,7 +387,7 @@ class CounterTask : Runnable {
     }
     
     override fun run() {
-        for (i in 1 to iterations) {
+        for (i = 1 to iterations) {
             if (increment) {
                 counter.increment()
             } else {
@@ -452,14 +453,14 @@ class AsyncDownloader {
         var threads = new Thread[urls.length]
         
         // Start all downloads concurrently
-        for (i in 0 to urls.length - 1) {
+        for (i = 0 to urls.length - 1) {
             var task = new DownloadTask(urls[i], results, i)
             threads[i] = new Thread(task)
             threads[i].start()
         }
         
         // Wait for all to complete
-        for (thread in threads) {
+        each(threads, thread) {
             thread.join()
         }
         
@@ -563,7 +564,7 @@ namespace ThreadingExample {
             
             var results = downloader.downloadMultipleAsync(urls)
             
-            for (result in results) {
+            each(results, result) {
                 "Downloaded: ${result.url}".println()
             }
             
@@ -581,7 +582,7 @@ namespace ThreadingExample {
         }
         
         override fun run() {
-            for (i in 1 to count) {
+            for (i = 1 to count) {
                 "${message} ${i}".println()
                 Thread.sleep(1000)
             }
@@ -635,12 +636,8 @@ processingThread.name = "Data-Processor"
 ### 4. Avoid Shared Mutable State
 ```amlang
 // Good - immutable data sharing
-class ImmutableData {
-    const var value: String
-    
-    constructor(value: String) {
-        this.value = value
-    }
+class ImmutableData(const value: String) {
+    // value can't change after construction
 }
 
 // Better - use message passing instead of shared state
