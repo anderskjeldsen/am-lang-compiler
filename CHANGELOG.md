@@ -2,7 +2,7 @@
 
 All notable compiler changes are documented here.
 
-## [0.16.0] - Unreleased
+## [0.16.0] - 2026-11-22
 
 Changes since v0.15.0.
 

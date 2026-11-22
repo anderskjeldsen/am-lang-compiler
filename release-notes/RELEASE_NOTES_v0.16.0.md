@@ -1,6 +1,6 @@
 # AmLang v0.16.0 Release Notes
 
-**Release Date:** Unreleased
+**Release Date:** 2026-11-22
 
 v0.16.0 is mostly about correctness. More than a hundred fixes, many of them code that compiled without a word and did the wrong thing: wrong values, leaks, crashes in generated code and crashes in the compiler. It also adds array literals that hold any expression, labeled `break` and `continue`, nullable enums, a `when` over an enum that needs no `else`, typed lambda parameters and short lambda forms, and checked integer division in tests. Out of memory is now fatal, and build output is kept per build target.
 
