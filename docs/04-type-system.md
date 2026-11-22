@@ -91,6 +91,48 @@ Safe calls (`?.`) skip the member access when the receiver is null. The `??` ope
 
 `legacyObjectNullability` in `compilerFlags` and `#legacyObjectNullability` are rejected. Remove them from the root package and dependencies when migrating. See the [upgrade guide](../README.md#upgrading-to-v0130).
 
+A safe chain's result is null when any link is null, and is nullable even when
+the last member isn't (`node?.kid?.n` is an `Int?`). `==`, `!=`, `!!` and `??`
+after the chain apply to that result:
+
+```amlang
+node?.kid?.n == null    // true when node or node.kid is null
+node?.kid?.n != 7       // true when either is null
+node?.kid?.n!!          // throws when either is null
+node?.kid?.n ?? -1      // -1 when either is null
+```
+
+### Nullable values in operators
+
+A nullable primitive can be the operand of an arithmetic, bitwise or
+relational operator, of `!` and of unary `-`, of `&&` and `||` (a `Bool?`), and
+the condition of `if` and `while`. The right operand of `&&`/`||` is checked
+only when it is evaluated, so `false && flag` doesn't throw when `flag` is null. Where a non-null value is needed
+(an operator, a non-null parameter, `var y: Int = x`), the compiler converts it
+with a runtime null check, as `x!!` would: a null throws a
+`NullArgumentError`/`NullAssignmentError` instead of being read as 0. After a
+null guard the check never fires:
+
+```amlang
+fun next(x: Int?): Int {
+    if (x == null) {
+        return 0          // or throw, continue, break
+    }
+    return x + 1          // x is not null here
+}
+
+if (count != null) {
+    total = total + count * 2
+}
+```
+
+There is no flow analysis: the check is made at each use, so a variable set
+back to null after its guard throws at the next operator rather than being
+accepted by the compiler. `==` and `!=` compare the nullable value itself
+(`x == null`; `x == 5` is false when `x` is null). Use `x ?? 0` for a default
+instead of a check. (Since 0.16.0; before, `x + 1` on an `Int?` was a C
+compile error.)
+
 ## Type Inference
 
 Am Lang supports type inference to reduce verbosity:
@@ -108,13 +150,70 @@ var count = 42
 var bigNum = 1234L
 ```
 
+## Enums in an `Any`
+
+An enum value stored in an `Any` remembers which enum it is, so `is` and `as`
+tell a `Color` from an `Int` with the same number and from a member of another
+enum:
+
+```amlang
+var a: Any = Color.blue
+a is Color      // true
+a is Other      // false, even if Other has a member with Color.blue's value
+a as Color      // Color.blue
+var n: Any = 2
+n is Color      // false
+n as Color      // throws "Can't cast Any to Color"
+```
+
+The `Any` still holds the enum's backing number: `a.toString()` prints it and
+`a as Int` and `a is Int` work as before. A program can tell apart at most 255
+enums this way (they are numbered in the order of their qualified names); a test
+against an enum past that is a compile error naming the enum.
+
 ## Array Types
 
 Arrays are declared with square brackets:
 ```amlang
 var numbers: Int[] = new Int[10]
-var names: String[] = new String[] {"Alice", "Bob", "Charlie"}
+var names: String[] = ["Alice", "Bob", "Charlie"]
 ```
+
+### Array literals
+
+An array literal `[a, b, c]` holds any expressions: constants, locals,
+parameters, calls, enum values, `new` objects, string concatenation and `null`.
+The elements are evaluated once each, left to right, and the array keeps its own
+reference to each object element.
+
+```amlang
+var a = 5
+var xs = [a, 2, Util.twice(3), a * a]   // Int[]
+var names = ["x" + a.toString(), "y"]   // String[]
+var boxes = [new Box(1), new Box(2)]    // Box[]
+sum([a, 1])                             // as an argument
+```
+
+The element type comes from where the literal goes, when that has a type: a
+declared variable or property (`var xs: Long[] = [a, 1]` holds Longs), a
+parameter (`f([a, 1])` with `f(xs: Long[])`), or a return type. Otherwise it is
+the elements' common type:
+
+- elements of one type give that type;
+- integers of the same signedness widen to the widest (`[i, 3L]` is `Long[]`),
+  and `Float` with `Double` gives `Double`;
+- objects widen to a base class or interface that another element has
+  (`[new Derived(), new Base()]` is `Base[]`);
+- a `null` element, or a nullable one, makes the element type nullable
+  (`["y", null]` is `String?[]`).
+
+Anything else, such as `Int` with `UInt`, `Int` with `Double` or two unrelated
+classes, is an error that asks for a declared type, and so are an empty literal
+(`var e: Int[] = []` is fine) and a literal of only nulls.
+
+Arrays of arrays are written `Int[][]` (that is `Array<Array<Int>>`), allocated
+with `new Int[][n]` and built from nested literals: `[[1, 2], [3]]`. `Int[]?[]`
+is an array of nullable `Int` arrays.
 
 ## Type Casting
 
@@ -149,6 +248,40 @@ class List<T> {
 var stringList: List<String> = new List<String>()
 var intList: List<Int> = new List<Int>()
 ```
+
+### Explicit type arguments on a call
+
+A generic function can be given its type arguments at the call, with or
+without a receiver: `List<Int>.newList<Int>()`, `Box<String>.lenOf<Int>(xs)`,
+or, inside the class, just `lenOf<Int>(xs)` or `count<Int>(xs)`. The `<` must
+touch the name, and the `>` must be followed by `(` or `.`; otherwise `<` and
+`>` are comparisons, so `a<b`, `i<n` and `a<b && c>(d)` compare as written.
+(`x<y>(z)` with no spaces reads as a call of `x`; write `x < y > (z)` for the
+comparison.)
+
+### Type arguments must match
+
+A scalar `Int` converts to `Long` where a `Long` is expected, but an `Int[]`
+does not pass as a `Long[]`, nor a `List<Int>` as a `List<Long>` (or as an
+`Iterable<Long>`). A generic's elements are stored at their own width, and
+passing the container doesn't convert them, so the callee would read the
+memory wrongly. The same goes for `Int` against `Int?` (`Int[]` as `Int?[]`,
+`List<Color>` as `List<Color?>`): a nullable value is stored with a null flag.
+These are compile errors (since 0.16.0):
+
+```
+Unable to convert Int[] to Long[]: its Int elements are stored differently from Long, ...
+```
+
+Copy element by element into a new array or list of the expected type, or
+declare it with that type from the start. The other signedness of the same
+width is allowed (`Byte[]` as `UByte[]`, `Int[]` as `UInt[]`), because it reads
+the same bits a converted copy would hold.
+
+Object type arguments must match too: a `List<Dog>` does not pass as a
+`List<Animal>`, because the callee could add a `Cat` to it, which the caller
+would then read as a `Dog`. A plain `Dog` still passes as an `Animal`, and a
+`List<String>` passes as a `List<String?>`.
 
 ## Native Types
 

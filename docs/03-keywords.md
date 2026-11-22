@@ -133,12 +133,22 @@ abstract class Shape {
 ```
 
 ### `open`
-Allows a class to be inherited (classes are closed by default).
+Allows a function to be overridden. Functions are closed by default: overriding one that
+is not `open`, `abstract` or itself an `override` is an error ("is not abstract or open").
+
+Classes need no modifier to be inherited from. `open class` is accepted and changes
+nothing.
+
+`open` is a modifier only in front of `fun` or `class`. Anywhere else it is an ordinary
+name: a property (`var open: Bool`), a method (`fun open()`), a local or a parameter.
 
 ```amlang
-open class Vehicle {
+class Vehicle {
     open fun start() {
         // can be overridden
+    }
+    fun stop() {
+        // can't be
     }
 }
 ```
@@ -280,47 +290,88 @@ fun printMessage() {
 ```
 
 ### `enum`
-Declares an enumeration type.
+Declares an enumeration type with a backing type. Each member is a constant of
+that type, and the enum is stored as its value.
 
 ```amlang
-enum class Color {
-    RED, GREEN, BLUE
+enum Color<UByte> {
+    import Am.Lang
+
+    background = 0UB
+    white = 7UB
 }
+
+var c = Color.white
+var n = c.toInt()      // a method of the backing type, called on the value
 ```
 
-### `struct`
-Declares a structure type with reference semantics.
+`Color?` is a nullable enum. Like `Int?` it carries a null flag beside the
+value, so null is not the same as a member whose value is 0:
 
-**Important**: Structs in AmLang use reference semantics but are allocated on the stack. When you assign one struct variable to another, you're copying the reference (pointer), not the data.
+```amlang
+var k: Color? = null
+k == null              // true
+k == Color.background  // false: background is 0, but k is null
+k = Color.white
+var w: Color = k!!     // throws NullAssertionError when k is null
+var v = k ?? Color.background
+```
+
+A `Color?` property, parameter, return value, list element (`List<Color?>`),
+array element (`new Color?[n]` starts as all null) or generic `T?` slot works
+the same way. A plain `Color` is never null: storing `null` in one is an error,
+and a `Color` property without an initializer starts as the first member.
+
+### `struct`
+Declares a structure type (value type).
 
 ```amlang
 struct Point {
     var x: Int
     var y: Int
 }
-
-// Struct must be initialized with an initializer
-var p1: Point {
-    x: 10
-    y: 20
-}
-
-// Assigning to another variable copies the reference
-var p2 = p1  // p2 and p1 point to the same struct data
-
-// Modifying through p2 affects p1
-p2.x = 30
-p1.x.toString().println()  // Prints: 30
-
-// When moved into an array, struct data is copied
-var points = [p1, p2]  // Array contains copies of the struct data
 ```
 
-**Memory Model**:
-- The initializer allocates the struct and creates a hidden variable
-- The declared variable is a pointer (`struct MyStruct *`) to the allocated data
-- Variable assignment copies the pointer, not the data
-- Array insertion copies the struct data into the array
+A struct is a value. Assigning it to a local, passing it as an argument or
+storing it in a field, static or array element copies it; a store through a
+member changes the struct it is made on, in place:
+
+```amlang
+var a: Point
+a.x = 1
+var b = a          // a copy
+b.x = 2            // a.x is still 1
+holder.pt.x += 1   // changes holder's struct (also Holder.spt.x, arr[i].x, o.a.b.x)
+var c = holder.pt
+c.x = 9            // holder.pt.x unchanged
+fun move(p: Point) { p.x = 5 }   // the caller's struct is unchanged
+```
+
+A struct can declare methods. `this` is the struct the method is called on (it
+is passed by address, not copied), so a store through `this` or through a bare
+member changes the receiver in place, whether it is a local, a field, a static,
+an array element or a nested struct:
+
+```amlang
+struct Counter {
+    var n: Int
+    fun inc(): Int {
+        n++
+        return n
+    }
+    fun reset() { this.n = 0 }
+    fun copy(): Counter { return this }   // a method that returns the struct returns a copy
+}
+
+var c: Counter
+c.inc()             // c.n is 1
+holder.counter.inc()   // changes holder's struct (also Holder.sc, arr[i], o.a.b)
+arr[2].reset()      // changes the element
+var d = c.copy()    // a copy: d.inc() leaves c alone
+```
+
+A call of a method on a struct parameter counts as a write, so the parameter is
+copied on entry (as for `p.x = 5`) and the caller's struct is left alone.
 
 ## Extension Keywords
 
@@ -390,6 +441,32 @@ for (i = 1 to 10) {
     i.toString().print()
 }
 ```
+
+### Loop labels: `break@name`, `continue@name`
+A loop can carry a label, written as a name and `@` directly before
+`for`, `while`, `loop` or `each`. `break@name` leaves that loop and
+`continue@name` starts its next iteration, from inside nested loops. A `for`
+loop's counter still advances on `continue@name`.
+
+```amlang
+outer@ for (i = 0 until rows) {
+    for (j = 0 until cols) {
+        if (grid[i * cols + j] == target) {
+            break@outer         // leaves both loops
+        }
+        if (skip(j)) {
+            continue@outer      // next i
+        }
+    }
+}
+```
+
+Every block the jump leaves releases its objects, and a `finally` on the way
+runs, as for a plain `break`. The label must name an enclosing loop of the
+same function or lambda body: an unknown label, a label on anything but a
+loop, a label used again by a nested loop, and a jump out of a lambda are
+compile errors. Labels are not keywords: a local named `outer` still works,
+and a lambda may reuse a label of the loop around it.
 
 ## Boolean Literals
 
@@ -476,7 +553,8 @@ when {                                          // no subject: boolean condition
 - A body is a `{ block }` or one statement on the rest of the line.
 - **Smart cast:** in a branch whose only condition is `is T`, the subject has type `T` — no `as` needed, and that includes writes such as `shape.name = n`. This works for class, interface and `Any` subjects (`is Int`, `is String`). It is not applied in a branch that assigns to the subject.
 - The subject is evaluated once. A subject that is not a plain local name is evaluated into a hidden local first.
-- `when` can also be a value: `var y = when …`, `return when …`, a function argument or an expression body. Then each branch must be a single expression, not a `{ }` block; an `else` branch is required; and the subject must be a plain variable (store anything else in a local first). It works like the equivalent `if … else if … else` expression, smart casts included:
+- A statement `when` without `else` whose branches don't match does nothing; it is never checked for completeness.
+- `when` can also be a value: `var y = when …`, `return when …`, a function argument, an operand (`a && when …`, `x + when …`) or an expression body. Then each branch must be a single expression, not a `{ }` block, and it works like the equivalent `if … else if … else` expression, smart casts included. The subject can be any expression (a call, a property chain); it is evaluated exactly once, and only when the value is computed:
 
 ```amlang
 fun area(s: Shape): Int = when (s) {
@@ -484,7 +562,26 @@ fun area(s: Shape): Int = when (s) {
     is Rect -> s.w * s.h
     else -> 0
 }
+
+var label = when (next().color) {           // next() runs once
+    Color.Red -> "red"
+    else -> "other"
+}
 ```
+
+- A value `when` needs an `else` branch, unless its subject is an enum and every member has a branch (since v0.16.0). Then adding a member to the enum later is a compile error at every `when` that doesn't handle it, instead of the new value silently taking an `else`. A nullable enum (`Color?`) also needs a `null` branch. A branch listing several members (`Color.Green, Color.Blue ->`) covers each of them; a branch value has to be written `Color.Green` (or with its namespace) to count.
+
+```amlang
+fun name(c: Color): String = when (c) {     // no else: every member has a branch
+    Color.Red -> "red"
+    Color.Green, Color.Blue -> "cool"
+}
+// With Color.Blue missing:
+// Program.aml - Line 1: `when` used as a value doesn't cover every value of `Color`:
+//   missing `Color.Blue`. Add a branch for each, or an `else` branch
+```
+
+  Without `else` the last branch is the one taken when no earlier branch matched, so the value is always defined. A non-enum subject, a `when { … }` without a subject, and a `when` with `is` branches still need an `else`.
 - `when` is contextual: it starts the construct only when `(` or `{` follows, so it stays usable as a name.
 
 ### `return`
@@ -535,6 +632,9 @@ All keywords are case-sensitive and must be written in lowercase:
 Some keywords are contextual and only have special meaning in certain contexts:
 - `to` - only special in range expressions
 - `var` - can be used as parameter modifier
+- `either`, `when`, `loop`, `scratch`, `keep`, `fast`, `data` and `shared` - special only where their construct can start (`either` before `(`, `when` before `(` or `{`, `loop` before `{`, `scratch`/`keep`/`fast` before `{` or `new`, `data` before `class`, `shared` before `static`); everywhere else they are ordinary names (a local, parameter, field, argument or function can be called `either` or `loop`: `fun loop()`, `loop()`)
+
+The other control-flow words are hard keywords and can't be used as names: `if`, `else`, `while`, `for`, `each`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`, `return`, `break`, `continue`, `scope`, `suspend`, `new`.
 
 ## Future Reserved Keywords
 

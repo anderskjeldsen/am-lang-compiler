@@ -60,6 +60,21 @@ build-targets:
 dependencies: []
 ```
 
+### Required keys
+
+Every `package.yml` needs `id`, `version` and `type` (`application` or `library`). A dependency entry needs
+`id` and `type` (`local` with a `path`, or `git-repo` with a `url`), a platform needs an `id`, and a build
+target needs an `id` (its `platform` is optional, for targets that only run `commands`). When one is missing
+or has the wrong shape, `amlc` prints one line that names the file, and exits with status 1:
+
+```
+Error: /work/app/package.yml: missing required key 'id'
+Error: /work/app/../lib/package.yml: missing required key 'version'
+```
+
+For a dependency's `package.yml` the path is that dependency's own file. An `application` package without a
+`static fun main` builds, and its program does nothing when run (it is a library in all but name).
+
 ### Advanced Package Configuration
 
 ```yaml

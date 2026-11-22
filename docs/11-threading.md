@@ -22,7 +22,10 @@ native class Thread(var runnable: Runnable) {
     
     native fun start()
     native fun join()
-    
+    native fun send(message: Object)
+
+    native static fun receive(): Object       // throws ThreadFailedException for a failed worker
+    native static fun tryReceive(): Object?   // likewise
     native static fun getCurrent(): Thread
     native static fun sleep(milliseconds: Long)
 }
@@ -200,6 +203,27 @@ class AsyncDemo {
     }
 }
 ```
+
+### Running Work on Another Thread
+
+`TaskScheduler.runAsync<T>(threadType, work)` runs `work` on a worker thread and
+suspends the caller until it is done. The caller resumes **on its own thread**
+with the result, or with the worker's exception rethrown:
+
+```amlang
+suspend fun connect(host: String, port: Int): Socket {
+    return TaskScheduler.runAsync<Socket>(TaskThreadType.IO, () => {
+        return Socket.connectNow(host, port)
+    })
+}
+```
+
+Only `work` crosses to the worker, and its captures are deep-copied like any
+message; the result is copied back. The caller's continuation stays behind in a
+per-thread table, so it is never touched by another thread. The resume arrives
+as a `Task` in the caller's mailbox: a worker handles it in its task loop, and
+the main thread must call `TaskScheduler.handleMainTasks()` in its loop. An
+exception from `work` comes back as an `Exception` carrying its message.
 
 ## Concurrent Programming Patterns
 
@@ -623,6 +647,55 @@ class SafeTask : Runnable {
     }
 }
 ```
+
+An exception that escapes a worker's `run()` is printed on the worker, and the
+thread that started the worker is told. A "thread failed" notice goes into the
+parent's mailbox, behind any messages the worker sent before it failed, and the
+parent's `Thread.receive()` or `Thread.tryReceive()` throws a
+`ThreadFailedException` when it reaches that notice. So a parent waiting for a
+reply from a worker that died gets an exception at the `receive()`, not a wait
+that never ends:
+
+```amlang
+var t = new Thread(new Fetcher(url))
+t.name = "fetcher"
+t.start()
+try {
+    var reply = Thread.receive() as FetchResult
+    // ...
+} catch (e: ThreadFailedException) {
+    // e.message is "Thread 'fetcher' failed: <the worker's message>"
+    "Fetch failed: ${e.causeMessage}".println()
+}
+```
+
+`ThreadFailedException` (in `Am.Threading`) extends `Exception`. Besides the
+message it has `threadName`, `causeClassName` (for example `Am.Lang.Exception`),
+`causeMessage`, and `cause`, a copy of the worker's exception with its fields
+and stack trace. `cause` is null when the exception could not be copied because
+it refers to something not sendable, such as a `Mutex`. The rules:
+
+- A worker that ends normally sends no notice.
+- The notice stays in the mailbox after `join()`, so `join()` then `receive()`
+  still throws. Each notice is thrown once; the next `receive()` goes on with
+  the rest of the mailbox.
+- A worker's parent is the thread that called `start()`, so a worker that starts
+  workers of its own gets their notices, not main.
+- No notice is sent when the parent has already finished, when the worker ran
+  out of memory, or while the program is shutting down after running out of
+  memory (nothing may allocate then).
+
+A thread whose mailbox loop must keep going when a worker fails catches
+`ThreadFailedException` around its `receive()`.
+
+Running out of memory is not an exception that `catch` sees. A worker that runs
+out stops, and the whole program shuts down: main tells the other threads to
+stop (each sees it at its next `receive()`, `join()`, `sleep()` or `new`), waits
+up to 3 seconds for them, runs its `#runOnExit` hooks and exits with status 1 (20
+on AmigaOS). On AmigaOS and MorphOS it waits 10 seconds, then removes the tasks
+of threads that still haven't stopped (`RemTask`; what they held leaks) so that
+none keeps running after the program has gone. See "Out of memory" in
+[Functions](10-functions.md).
 
 ### 3. Use Meaningful Thread Names
 ```amlang

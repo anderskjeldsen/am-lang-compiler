@@ -515,6 +515,29 @@ native class SafeFile {
 }
 ```
 
+Out of memory in native C (programs built by amlc 0.16.0 or later): when
+`__allocate_object`, `__create_string` or `__create_array` can't get memory,
+the runtime does not return NULL to native code. It prints the failure and jumps (`longjmp`) to the
+thread's cleanup, and the program shuts down (see "Out of memory" in
+[Functions](10-functions.md)). So a native's code after a failed allocation
+never runs, and nothing it would release is released. The exception is code
+inside the runtime's global lock (`__amlc_global_lock`, `Forbid()` or
+`Disable()` on the Amiga family): a jump there would leave the lock taken, so
+the allocation returns NULL as before and the native must handle it. A native
+may still call `__throw_out_of_memory_exception` itself after a failed `malloc`;
+it takes the same path.
+
+When a thread ends with `releaseHeapOnExit` (am-lang-core 0.16.0; always on
+AmigaOS, MorphOS and AROS), every object it still has is released, whatever
+its reference count: after an out-of-memory jump the skipped frames never
+released theirs (`__amlc_release_heap`). Objects nothing
+else holds go first, through the normal release, so a release hook runs while
+what its object holds by property is still intact; in a cycle every hook runs
+before any property is dropped. So a native should hold another AmLang object
+by a property (or an array element), not by a bare `__increase_reference_count`
+on a pointer kept in its own C data: at that point such a count is zeroed with
+all the others, and the object may be freed before the native's release runs.
+
 ### 3. Resource Management
 ```amlang
 class ResourceManager {

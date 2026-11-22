@@ -438,6 +438,202 @@ native class Socket {
 }
 ```
 
+## Functions that never throw: `#noThrow`
+
+`#noThrow` before a function promises that it never ends with an exception, so
+the compiler can call it without checking for one. The compiler checks the
+promise: a body that can throw outside a catch-all `try`/`catch` is a compile
+error. On a `native` function the promise is trusted (its C was audited by
+hand); on a `suspend` function it is not allowed.
+
+The promise is inherited. Every override of a `#noThrow` function, and every
+implementation of a `#noThrow` interface member, must not throw either, whether
+it overrides directly, several classes down, or in a generic class. The
+`toString()`, `hash()` and `equals()` every class inherits are `#noThrow`
+(`AnyInterface`, `Object`), so this applies to your own overrides of them. The
+override doesn't repeat `#noThrow`; it has to catch what its body can throw
+itself:
+
+```
+class Node {
+    var next: Node? = null
+
+    override fun toString(): String {
+        try {
+            return "Node -> " + this.next.toString()
+        } catch (e: Exception) {
+            return "Node"
+        }
+    }
+}
+```
+
+Without the `try`, the build stops with an error that names the override, the
+`#noThrow` function it overrides and the first thing in the body that can throw:
+
+```
+Program.aml - Line 4: 'App.Node.toString' overrides #noThrow function 'Am.Lang.Any.toString'
+and can throw: null check on member access `this.next.toString()` at line 6. An override of
+a #noThrow function must not throw: catch it with try/catch (catch (e: Exception)) around the
+code that can throw.
+```
+
+What can throw: `throw`; `new T[n]` with a size that isn't a non-negative
+constant (a negative size throws); `!!`; a checked `as`; a member access
+through a nullable value or `Any` (null check); `op=` on a nullable primitive;
+`array[i]` (bounds check); a call to a function that can throw; a call through a
+lambda or function reference; `new` of a class whose property initializers or
+`init { }` blocks (its own or a base class's) can throw. Only a catch-all absorbs them:
+`catch (e: Exception)` (or an untyped `catch`), and only for code in the `try`
+block. A catch of a narrower type, such as `catch (e: NullReferenceException)`,
+doesn't satisfy the promise. The members a `data class` generates already run in
+a catch-all.
+
+Allocating doesn't throw: `new` (of a class whose initializers can't throw),
+array literals and string templates are fine in a `#noThrow` function, so a
+`toString()` can build its string without a `try`:
+
+```
+override fun toString(): String {
+    return "Node ${this.name}"
+}
+```
+
+## Out of memory
+
+Running out of memory isn't an exception (since 0.16.0). It can't be caught: the
+program shuts down instead, as in Rust, Swift and Go.
+
+- The thread that runs out prints `Out of memory allocating <class>` (or
+  `Out of memory at <class> line N`) to stderr (stdout on AmigaOS) without
+  allocating.
+- On the main thread the program goes straight to its normal shutdown: the
+  `#runOnExit` hooks, static properties, the final sweep and each class's
+  shutdown run as at a normal exit. The exit status is 1, or 20 (`RETURN_FAIL`)
+  on AmigaOS.
+- On another thread, that thread stops and tears itself down, and tells the main
+  thread to shut down. Main stops the other threads, waits up to 3 seconds for
+  them (10 seconds on AmigaOS and MorphOS), then runs the same shutdown.
+- A thread sees a stop request when it next calls `Thread.receive()`,
+  `Thread.join()` or `Thread.sleep()`, or allocates with `new`. A thread busy in a
+  loop that does none of these, or blocked in an operating-system call, isn't
+  waited for after the timeout. On AmigaOS and MorphOS such a thread would keep
+  running in the program's code after the exit unloads it, so its task is
+  removed (`RemTask`) and the program prints
+  `Thread 'name' did not stop within 10 s; removed`. What it held is not
+  freed: its stack, its objects, and any file or library it had open (such a
+  file stays locked until reboot). Elsewhere (and on AROS) the process exit
+  ends it. Design threads to call `Thread.sleep()` or `Thread.receive()` in
+  long loops, so they stop cleanly.
+- If memory runs out again during the shutdown, the remaining `#runOnExit` hooks
+  are skipped; the sweep, the class shutdowns and the exit still happen.
+
+The frames that were running when memory ran out are not unwound: their
+`finally` blocks don't run. On AmigaOS, MorphOS and AROS, whose exit doesn't
+close a program's files or free its locks, the objects they held are released
+when their thread ends, after the static properties: each object's release runs
+as at any other release, so a `FileStream` they had open is closed and its file
+no longer locked. On other platforms that is the am-lang-core feature
+`releaseHeapOnExit` (about 3% slower allocation, see the
+[feature system](feature-system.md)); without it those objects stay allocated
+until the process exits, which closes the files. Cleanup written in the program
+itself (a `finally`, a call to `flush()` or `close()` that the frame never
+reached) doesn't run either way, so put what must happen in a `#runOnExit` hook
+or a class's shutdown.
+
+`OutOfMemoryException` still exists so that old code compiles, but the runtime
+no longer throws it, and `catch (e: OutOfMemoryException)` never catches an
+allocation failure. To test how a program shuts down, make its allocations fail
+with `Arc.failAllocationsAfter(count, sticky)` (`Am.Lang.Diagnostics`).
+
+## Lambdas
+
+A lambda is a function written where a value goes. Its parameter types usually come
+from the function type it is passed or assigned to, so the parameters need no types:
+
+```amlang
+static fun apply(f: (x: Int) => Int, v: Int): Int {
+    return f(v)
+}
+
+var a = Program.apply((x) => {          // block body
+    return x * 2
+}, 3)
+var b = Program.apply((x) => x * 2, 3)  // expression body: returns its value
+var c = Program.apply(x => x + 1, 3)    // one parameter: no parentheses needed
+var d = Program.apply((x) => return x * 3, 3)
+var stored: (x: Int) => Int = x => x * 10
+```
+
+An expression body returns its value when the function type has a return type. For a
+function type that returns nothing, written with a lowercase `void`, the expression is
+just run:
+
+```amlang
+static fun twice(f: () => void) {
+    f()
+    f()
+}
+
+Program.twice(() => counter.add())
+var once: () => void = () => {
+    counter.add()
+}
+```
+
+`Void` with a capital V is not a type; `() => Void` is an error that points to `void`.
+
+### Typed parameters
+
+A parameter may also declare its type, as in a function signature. With nothing to take
+a function type from (a local or field without a declared type), the declared types and
+what the body returns make the lambda's type:
+
+```amlang
+var f = (x: Int) => x * 2               // (x: Int) => Int
+var a = f(3)                            // 6; f.run(3) is the same call
+var g = (n: Int, s: String) => {        // (n: Int, s: String) => String
+    return s + n.toString()
+}
+var say = (s: String) => s.println()    // returns nothing: (s: String) => void
+var count = (l: List<String>) => l.getSize()
+var isNull = (s: String?) => s == null
+var twice = (h: (n: Int) => Int, v: Int) => h(h(v))
+```
+
+A lambda with no parameters has nothing to declare, so its body alone makes the type:
+`var z = () => show(4)` is `() => String`, and `var tick = () => counter.add()` is
+`() => void`. A lambda local inside a lambda works the same way:
+
+```amlang
+var outer = () => {
+    var inner = () => 5
+    return inner() + 1                  // outer is () => Int
+}
+```
+
+The result type is the type of an expression body, or of the values the block's
+`return` statements give (they must agree: `return 1` and `return 2L` is an error); no
+returned value makes a `void` lambda.
+
+Where a function type is expected (a typed variable, field or parameter, a function's
+parameter), declared types must be exactly the expected ones, or it's a compile error
+that names the parameter and both types:
+
+```amlang
+var ok: (x: Int) => Int = (x: Int) => x + 1
+var bad: (x: Int) => Int = (x: String) => 1
+// Lambda parameter 'x' is declared String, but the function type it is used as expects Int
+```
+
+Some parameters typed and some not, `(a: Int, b) => …`, is fine where a function type is
+expected (the untyped ones take theirs from it); with none, every parameter needs a type.
+
+A lambda belongs to the class it is written in: its body sees that file's imports and
+can use the enclosing function's locals and parameters (also from a lambda inside a
+lambda), and compiler errors in it point at that file. This holds when the lambda is
+passed to a function of another class, such as `list.filter((w) => ...)`.
+
 ## Function Examples
 
 ### Utility Functions

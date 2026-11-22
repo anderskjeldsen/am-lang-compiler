@@ -317,13 +317,46 @@ var result = new Builder()
 ### Object Creation
 
 1. Memory allocated
-2. Constructor called
-3. Object initialized
+2. Constructor called: the primary constructor's parameters are stored
+3. Object initialized: property initializers and `init { }` blocks run top to bottom, in source order
 4. Reference returned
 
 ```amlang
 var person = new Person("Alice", 25)  // All steps happen here
 ```
+
+#### Initialization order
+
+A class can have several `init { }` blocks. They run interleaved with the property initializers, in the order they appear in the class, so each one can use everything declared above it:
+
+```amlang
+class Rect(var width: Int, var height: Int) {
+    var area: Int = width * height      // 1st: sees width and height
+    init { log("area ${area}") }        // 2nd: sees area
+    var label: String = "rect"          // 3rd
+    init { log(label) }                 // 4th: sees label
+}
+```
+
+A property declared *below* the code that reads it still holds its zero value (0, false or null) at that point. A base class is fully initialized, including its `init` blocks, before the derived class's initializers start.
+
+#### Exceptions during initialization
+
+A property initializer or `init { }` block that throws (in the class or in a base class) stops the construction: the remaining initializers don't run, the half-built object is released, and the exception reaches the code around the `new` like an exception from any call (since 0.16.0; before, it was lost):
+
+```amlang
+class Config {
+    var port: Int = Parser.parsePort(text)   // throws on bad input
+}
+
+try {
+    var c = new Config()
+} catch (e: Exception) {
+    e.message.println()                      // the parser's message
+}
+```
+
+Since `new` of such a class can throw, a `#noThrow` function that builds one has to catch (see [Functions that never throw](10-functions.md#functions-that-never-throw-nothrow)).
 
 ### Object Destruction
 

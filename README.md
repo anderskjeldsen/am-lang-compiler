@@ -4,24 +4,24 @@ AmLang is a statically typed, object-oriented language that compiles to C and th
 
 [![GitHub Release](https://img.shields.io/github/v/release/anderskjeldsen/am-lang-compiler)](https://github.com/anderskjeldsen/am-lang-compiler/releases)
 
-This repository contains public documentation, examples, installation tools, and compiler releases. This README describes **v0.15.0**. Start with the [release notes](release-notes/RELEASE_NOTES_v0.15.0.md) and [upgrade steps](#upgrading-to-v0150) if you already use AmLang.
+This repository contains public documentation, examples, installation tools, and compiler releases. This README describes **v0.16.0**. Start with the [release notes](release-notes/RELEASE_NOTES_v0.16.0.md) and [upgrade steps](#upgrading-to-v0160) if you already use AmLang.
 
-## What's new in v0.15.0
+## What's new in v0.16.0
 
-- **Breaking: `for (i = a to b)` now includes `b`.** The new `for (i = a until b)` stops before it, which is what `to` used to do. The compiler warns about a `to` loop whose end is a `size`, `length` or `count`.
-- **Overloading by parameter type:** functions can share a name and a parameter count, and a call picks the best match. Virtual and interface overloads dispatch at run time.
-- **`when` with smart casts:** in an `is T` branch the subject is typed `T` without a cast. `when` also works without a subject and as an expression.
-- **`data class`:** generated `equals`, `hash`, `toString` and `copy()` from the primary-constructor properties.
-- **`if` and `when` as expressions, and expression bodies:** `var s = if (x < 0) "neg" else "pos"`, `fun area(): Int = this.w * this.h`.
-- **Default parameter values and named arguments,** for functions and constructors.
-- **More operators:** `*=`, `/=`, `%=`, `&=` and `^=`, and declarable `op /`, `op %`, `op &`, `op |` and `op ^`.
-- **`amlc` exits 1 when it fails,** including when a test fails. An unknown `-bt` is an error, and a build removes the old executable first.
-- **Platforms inherit their toolchain** from the platforms they extend, and `amlc test` compiles and links with the same options and `linkerCommand` as `amlc build`.
-- **`requiredStack` on a build target:** an Amiga program reports a too-small stack at startup instead of crashing.
+v0.16.0 is mostly about correctness: more than a hundred fixes, many of them code that compiled without a word and did the wrong thing.
 
-See the [full changelog](CHANGELOG.md) for the fixes, many of them code that compiled silently and did the wrong thing.
+- **Array literals hold any expression, and nest:** `[a, f(x), Color.red]`, `[[1, 2], [3, 4]]`, `[new Circle(1), new Rect(2, 3)]`.
+- **Labeled loops:** `break@outer` and `continue@outer` leave or continue an outer loop, releasing objects and running `finally` on the way.
+- **Nullable enums:** `Color?` is null, not the member whose value is 0.
+- **`when` over an enum needs no `else`** when every member has a branch; a missing member is a compile error that names it.
+- **Lambdas:** typed parameters (`(x: Int) => x * 2`), one parameter without parentheses (`n => n > 1`), expression bodies, and an inferred type for a lambda in an untyped local.
+- **Integer division is checked in tests:** under `amlc test` a division by zero throws `ArithmeticException` with file and line. Release builds don't check; `checkedDivision` on a build target chooses either way.
+- **`String.compareTo`**, path style conversion in `Am.IO.File`, `TaskScheduler.runAsync`, and a warning for a signed and an unsigned integer in one operator.
+- **Breaking:** out of memory shuts the program down instead of throwing; `<` and `>` on strings, hex literal suffixes and `"a" + i` are compile errors; type arguments must match; build output is per build target in `builds/<targetId>/`.
 
-**Upgrade `am-lang-core` to 0.15.0 at the same time.** Its loops are written with `until`, which older compilers don't know, and its 0.14.0 loops would run one pass too many under this compiler.
+See the [release notes](release-notes/RELEASE_NOTES_v0.16.0.md) for the breaking changes in full, and the [changelog](CHANGELOG.md) for every fix.
+
+**Upgrade `am-lang-core` to 0.16.0 at the same time.**
 
 ## Installation
 
@@ -48,16 +48,16 @@ Download from [GitHub Releases](https://github.com/anderskjeldsen/am-lang-compil
 
 | Compiler host | Archive | Launcher/executable |
 |---|---|---|
-| Linux x64 | `amlc-linux-x64-0.15.0.tar.gz` | `amlc-linux` |
-| macOS ARM64 | `amlc-macos-arm64-0.15.0.tar.gz` | `amlc-mac-arm64` |
-| Windows x64 | `amlc-windows-x64-0.15.0.zip` | `amlc-windows.exe` |
-| Any supported Java 21+ host | `amlc-jar-0.15.0.tar.gz` or `.zip` | `amlc.sh`, `amlc.bat`, or `java -jar amlc-0.15.0.jar` |
+| Linux x64 | `amlc-linux-x64-0.16.0.tar.gz` | `amlc-linux` |
+| macOS ARM64 | `amlc-macos-arm64-0.16.0.tar.gz` | `amlc-mac-arm64` |
+| Windows x64 | `amlc-windows-x64-0.16.0.zip` | `amlc-windows.exe` |
+| Any supported Java 21+ host | `amlc-jar-0.16.0.tar.gz` or `.zip` | `amlc.sh`, `amlc.bat`, or `java -jar amlc-0.16.0.jar` |
 
 For example, on Linux x64:
 
 ```bash
-curl -fLO https://github.com/anderskjeldsen/am-lang-compiler/releases/download/v0.15.0/amlc-linux-x64-0.15.0.tar.gz
-tar -xzf amlc-linux-x64-0.15.0.tar.gz
+curl -fLO https://github.com/anderskjeldsen/am-lang-compiler/releases/download/v0.16.0/amlc-linux-x64-0.16.0.tar.gz
+tar -xzf amlc-linux-x64-0.16.0.tar.gz
 chmod +x amlc-linux
 ./amlc-linux --version
 ```
@@ -96,7 +96,7 @@ amlc run . -bt linux-x64
 
 Both commands require a project path (`.` here). `-bt` selects an ID from that project's `buildTargets`; it is not a globally predefined target. Add a matching platform and build target for other systems, as in the configuration below.
 
-Production output goes to `builds/`, with the executable at `builds/bin/<platform>/app`. Tests use a separate `test-builds/` tree.
+Production output goes to `builds/<targetId>/`, with the executable at `builds/<targetId>/bin/app`. Tests use a separate `test-builds/<targetId>/` tree.
 
 ## Language features
 
@@ -268,7 +268,7 @@ namespace ExampleTests {
 }
 ```
 
-Mocks are scoped; nested `scope` blocks support temporary overrides. See the [unit-testing example](examples/unit-testing/) for calculator sources and additional mock scenarios. Test executables are written to `test-builds/test-bin/<platform>/test_app`, with makefiles at `test-builds/<platform>.makefile`.
+Mocks are scoped; nested `scope` blocks support temporary overrides. See the [unit-testing example](examples/unit-testing/) for calculator sources and additional mock scenarios. Test executables are written to `test-builds/<targetId>/test-bin/test_app`, with the makefile at `test-builds/<targetId>/Makefile`.
 
 ## Platforms
 
@@ -282,28 +282,29 @@ The **compiler host** and the **generated program's target** are separate choice
 | MorphOS | `morphos-ppc` |
 | AROS | `aros-x86-64`, `aros-arm64`, `aros-m68k` |
 
-Target availability depends on your package configuration, C toolchain, and native dependencies. A Windows-hosted compiler is distributed, and am-lang-core 0.15.0 adds a `windows-x64` runtime target, built with the MinGW cross-compiler. Generated executables may require platform libraries; native compilation does not imply a fully static executable.
+Target availability depends on your package configuration, C toolchain, and native dependencies. A Windows-hosted compiler is distributed, and am-lang-core (since 0.15.0) has a `windows-x64` runtime target, built with the MinGW cross-compiler. Generated executables may require platform libraries; native compilation does not imply a fully static executable.
 
 ## Performance
 
-The [benchmark example](examples/performance_test/ReadMe.md) compares array and non-array point-processing workloads across several languages. Its recorded timings are historical measurements for that workload and machine, not a v0.15.0 benchmark or a general performance ranking.
+The [benchmark example](examples/performance_test/ReadMe.md) compares array and non-array point-processing workloads across several languages. Its recorded timings are historical measurements for that workload and machine, not a v0.16.0 benchmark or a general performance ranking.
 
 v0.14.0 focused on allocation cost — arenas, property-slot seeding and borrowed slot reads — on top of v0.13.0's work on generated-code size, exception-call overhead and incremental rebuilds. Measure your application with its intended C compiler, optimization flags, and target hardware.
 
-## Upgrading to v0.15.0
+## Upgrading to v0.16.0
 
-1. **Rewrite `to` loops that stop before their end to use `until`.** Start with the compile-time warnings, then review `to` loops whose end is a variable or expression by hand.
-2. **Upgrade `am-lang-core` to 0.15.0.**
-3. **Check scripts and CI that call `amlc`.** A non-zero exit status now means a real failure, and `amlc test` exits 1 when any test fails.
-4. **Fix code that was being silently dropped.** `init` blocks and property initializers are now validated, so errors there that used to vanish are compile errors.
-5. **If you call an AmLang `op -` by its C symbol, use `_op__minus`.**
+1. **Upgrade `am-lang-core` to 0.16.0.**
+2. **Fix the new compile errors:** drop hex literal suffixes (use `as` where nothing gives the type), replace `<`/`>` on strings with `compareTo`, add `.toString()` or a template where a non-String is added to a String, put a `try`/`catch` in a `toString`, `hash` or `equals` override that can throw, and convert arrays and generics whose type arguments differ.
+3. **Remove `catch` blocks for `OutOfMemoryException`;** out of memory now shuts the program down.
+4. **Update scripts that read build output:** `builds/<targetId>/bin/app` instead of `builds/bin/<platform>/app`, and `test-builds/<targetId>/`.
+5. **Check code that relied on old behaviour:** a `Long + Int` that was cut to an Int, `?.x == null` that was false, a null `Bool?` that counted as false, and Byte arithmetic on ARM or PowerPC.
+6. **Make sure `git` is on `PATH`** for git dependencies, and run your tests: `amlc test` now checks integer division.
 
-Upgrading from v0.13.0 or earlier? Work through the [v0.14.0 upgrade steps](release-notes/RELEASE_NOTES_v0.14.0.md) first; from v0.12.0 or earlier, the [v0.13.0 upgrade steps](release-notes/RELEASE_NOTES_v0.13.0.md) before that — legacy object nullability is rejected, test output moved to `test-builds/`, and the borrowed-parameter convention from v0.12.0 applies to native functions that retain object arguments. See the [v0.15.0 release notes](release-notes/RELEASE_NOTES_v0.15.0.md) for details and known limitations.
+Upgrading from v0.14.0 or earlier? Work through the [v0.15.0 upgrade steps](release-notes/RELEASE_NOTES_v0.15.0.md) first — `to` in a `for` loop now includes its end, and `amlc` exits 1 on failure. From v0.13.0 or earlier, the [v0.14.0 upgrade steps](release-notes/RELEASE_NOTES_v0.14.0.md) first; from v0.12.0 or earlier, the [v0.13.0 upgrade steps](release-notes/RELEASE_NOTES_v0.13.0.md) before that — legacy object nullability is rejected, test output moved to `test-builds/`, and the borrowed-parameter convention from v0.12.0 applies to native functions that retain object arguments. See the [v0.16.0 release notes](release-notes/RELEASE_NOTES_v0.16.0.md) for details and known limitations.
 
 ## Documentation and examples
 
 - [Documentation index](docs/README.md), [getting started](docs/18-getting-started.md), and [compiler usage](docs/16-compiler-usage.md)
 - [Hello world](examples/hello-world/), [loop syntax](examples/loop-keyword-demo/), [file browser](examples/file-browser/), and [unit tests](examples/unit-testing/)
-- [v0.15.0 release notes](release-notes/RELEASE_NOTES_v0.15.0.md), [v0.14.0 release notes](release-notes/RELEASE_NOTES_v0.14.0.md), [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md), and [release history](CHANGELOG.md)
+- [v0.16.0 release notes](release-notes/RELEASE_NOTES_v0.16.0.md), [v0.15.0 release notes](release-notes/RELEASE_NOTES_v0.15.0.md), [v0.14.0 release notes](release-notes/RELEASE_NOTES_v0.14.0.md), [v0.13.0 release notes](release-notes/RELEASE_NOTES_v0.13.0.md), and [release history](CHANGELOG.md)
 
 Libraries include [am-lang-core](https://github.com/anderskjeldsen/am-lang-core), [am-json](https://github.com/anderskjeldsen/am-json), [am-net](https://github.com/anderskjeldsen/am-net), [am-ssl](https://github.com/anderskjeldsen/am-ssl), [am-ui](https://github.com/anderskjeldsen/am-ui), and [am-imaging](https://github.com/anderskjeldsen/am-imaging). Check each library's platform support and compiler compatibility when adding it to a project.

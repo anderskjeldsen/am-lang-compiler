@@ -1,4 +1,4 @@
-# Compiler usage (v0.13.0)
+# Compiler usage (v0.16.0)
 
 AmLang compiles `.aml` source to C, then invokes the configured target toolchain through make. The compiler is distributed as native executables and as a JAR requiring Java 21+.
 
@@ -6,7 +6,7 @@ AmLang compiles `.aml` source to C, then invokes the configured target toolchain
 
 ```bash
 amlc <command> <project-path> [options]
-java -jar amlc-0.13.0.jar <command> <project-path> [options]
+java -jar amlc-0.16.0.jar <command> <project-path> [options]
 ```
 
 Only `--help` and `--version` work without a command and project path. Use `.` for the current project. Build target IDs must exist in that project's `package.yml`.
@@ -22,7 +22,7 @@ Only `--help` and `--version` work without a command and project path. Use `.` f
 | `docs` | `amlc docs . -docformat both -docout api-docs` | Generate API documentation |
 | `clean` | `amlc clean . -bt linux-x64` | Remove production object files for the target |
 
-Run `clean` from the project directory: its current implementation addresses `builds/bin/<platform>/o` relative to the working directory. It does not remove generated C, test objects, or dependencies.
+`clean` removes the object folders of the given build target, `builds/<targetId>/bin/o` and `test-builds/<targetId>/test-bin/o`, resolved against the package folder. Without `-bt` it asks before cleaning every declared target. It does not remove generated C or dependencies.
 
 ## Options
 
@@ -31,6 +31,9 @@ Run `clean` from the project directory: its current implementation addresses `bu
 | `-bt <id>` | Select a configured build target |
 | `-cores <n>` | Make parallelism (default 4) |
 | `-fld` | Force dependency reloading |
+| `-git-path <path>` | The `git` executable used to fetch git dependencies (default: `git` on `PATH`) |
+| `-nowarn` | Print no warnings |
+| `-wdeps` | Also list the dependencies' warnings (otherwise only counted) |
 | `-lpp <directory>` | Prefer local packages at `<directory>/<package-id>/` |
 | `-pof <file>` | Load YAML dependency overrides |
 | `-tests "ClassName testMethod"` | Filter tests by class/method names |
@@ -49,7 +52,7 @@ Run `clean` from the project directory: its current implementation addresses `bu
 | `-docformat json`, `md`, or `both` | Select API documentation format |
 | `-docout <directory>` | Select API documentation output directory |
 
-Test builds retain the uniform calling convention and exception checks so mocks can throw. Tree-shaking is also enabled by `treeShake: true` on a selected target; to get a report-only run, leave that setting and `-ftree-shake` off.
+Test builds retain the uniform calling convention and exception checks so mocks can throw, and they check integer division (see [Checked division](#checked-division)). Tree-shaking is also enabled by `treeShake: true` on a selected target; to get a report-only run, leave that setting and `-ftree-shake` off.
 
 `-fborrow-slot-reads` was removed in v0.14.0: borrowed property-slot reads are unconditional now, and the flag is no longer read. Leaving it on a command line is harmless but does nothing.
 
@@ -73,23 +76,65 @@ Not yet measured on m68k, where a memcpy is a libc call with no wide stores, and
 
 ## Output paths
 
+Output is kept per build target, so two targets on the same platform never share object files.
+
 | Output | Location |
 |---|---|
-| Production makefile | `builds/<platform>.makefile` |
-| Production executable | `builds/bin/<platform>/app` |
-| Production object files | `builds/bin/<platform>/o/` |
-| Test makefile | `test-builds/<platform>.makefile` |
-| Test executable | `test-builds/test-bin/<platform>/test_app` |
+| Production makefile | `builds/<targetId>/Makefile` |
+| Production executable | `builds/<targetId>/bin/app` |
+| Production object files | `builds/<targetId>/bin/o/` |
+| Test makefile | `test-builds/<targetId>/Makefile` |
+| Test executable | `test-builds/<targetId>/test-bin/test_app` |
 
-Tests no longer share the production generated-source tree. String constants use per-unit declarations; there is no shared `string_constants.h`.
+`amlc build .` without `-bt` only parses, binds and validates. A package with no `buildTargets:` still renders a single `builds/` tree. The generated makefiles depend on a stamp of the compile flags, so changing a flag, the compiler command or a build target's options rebuilds every object. A build folder made by an older compiler has no stamp: clear its object folder once. String constants use per-unit declarations; there is no shared `string_constants.h`.
+
+## Tests
+
+`amlc test . -bt <target>` builds the package's tests into `test-builds/<targetId>/` and runs them from `test-builds/<targetId>/test-bin/`, so a test reads files relative to that folder. Before each run the test files are staged there, fresh:
+
+| Package folder | Copied to |
+|---|---|
+| `tests/assets/` | `test-bin/assets/` |
+| `test-assets/` | `test-bin/assets/` (laid over `tests/assets/` when both exist) |
+| `tests/resources/` | `test-bin/resources/` |
+
+A run in which no test ran fails with `Error: no tests were run` and exit status 1. Each test class is built as `new` would build it (constructor, property initializers, `init` blocks).
+
+## Warnings
+
+`build`, `run`, `test` and `lint` print the package's warnings after validation and before any C is generated, sorted by file and line, with a count:
+
+```
+Warning: /work/app/src/am-lang/App/Main.aml - Line 12: Call to obsolete function 'toInt' — Use as Int instead
+1 warning in 1 file
+65 more warnings in dependencies (-wdeps lists them, -nowarn hides all)
+```
+
+Warnings in dependencies are only counted, since the package being built can't fix them.
+
+## Checked division
+
+Integer `/`, `%`, `/=` and `%=` can check the divisor and throw `ArithmeticException` on a division by zero or a signed `minValue / -1` (see [Integer division by zero](02-syntax-grammar.md#integer-division-by-zero)). `amlc test` checks by default; `amlc build` and `amlc run` don't, and there the result of dividing by zero is unspecified. A build target overrides the default either way:
+
+```yaml
+buildTargets:
+  - id: linux-x64-checked
+    platform: linux-x64
+    checkedDivision: true    # check in build and run too
+  - id: linux-x64-fast-tests
+    platform: linux-x64
+    checkedDivision: false   # don't check even in amlc test
+```
+
+A checked build treats every AmLang function as one that may throw: `#noThrow` on a non-native function is ignored, and every non-native function keeps the `function_result` return ABI. Native functions keep their ABI. An unchecked build is as before: `#noThrow` is enforced and a division is not a throw site.
 
 ## Toolchains and configuration
 
-Platforms declare `ccCommand` (preferred) or `gccCommand`, assembler/linker commands, include paths, and native sources. Build targets select a platform and can override C compiler/assembler commands. `ccCommand` wins over `gccCommand` when both are supplied. A platform that names no compiler inherits its C compiler, assembler and linker commands from the platforms it extends, so a variant only needs `extends:`.
+Platforms declare `ccCommand` (preferred) or `gccCommand`, assembler/linker commands, include paths, and native sources. Build targets select a platform and can override C compiler/assembler commands. A target's `features:` list says which package features it enables; a target without the key enables none. `ccCommand` wins over `gccCommand` when both are supplied. A platform that names no compiler inherits its C compiler, assembler and linker commands from the platforms it extends, so a variant only needs `extends:`.
 
 Use `gccRemoveOptions` and `linkerRemoveFlags` on a platform to subtract inherited flags. `dockerBuild` runs make in a container; its optional `platform` selects the container architecture. `sshBuild` uses SSH and rsync. `dockerTest` configures container execution of test binaries.
 
-Root-package `compilerFlags: [singleThreaded]` selects the runtime's single-threaded ARC configuration. It must be consistent across all objects. Clean/rebuild when switching that setting or compiler commands; changes to target overrides do not automatically invalidate existing object files.
+Root-package `compilerFlags: [singleThreaded]` selects the runtime's single-threaded ARC configuration. It must be consistent across all objects. Since v0.16.0 the makefile rebuilds every object when the compile flags or compiler commands change; a build folder made by an older compiler needs its object folder cleared once.
 
 ### Required stack
 
@@ -104,4 +149,4 @@ buildTargets:
 
 Before anything else runs, the program compares this with its actual stack. If the stack is smaller, it prints the size needed and exits with status 20. On AmigaOS the user sets the stack with the Shell's `Stack` command or in the icon, and the program does not change it. The check does nothing on platforms outside the Amiga family. The compiler cannot work out the number, so measure it.
 
-See the [README](../README.md#project-and-build-configuration) for configuration examples and the [release notes](../release-notes/RELEASE_NOTES_v0.13.0.md) for migration requirements.
+See the [README](../README.md#project-and-build-configuration) for configuration examples and the [release notes](../release-notes/RELEASE_NOTES_v0.16.0.md) for migration requirements.
